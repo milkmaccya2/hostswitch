@@ -1,5 +1,8 @@
 # HostSwitch
 
+[![npm version](https://badge.fury.io/js/@milkmaccya2%2Fhostswitch.svg)](https://www.npmjs.com/package/@milkmaccya2/hostswitch)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 シンプルなhostsファイル切り替えCLIツール（Node.js版）
 
 ## インストール
