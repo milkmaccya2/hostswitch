@@ -28,7 +28,7 @@ HostSwitch is a CLI tool that allows you to easily switch between different host
 
 ## Requirements
 
-- Node.js 14.0.0 or higher
+- Node.js 20.0.0 or higher
 - macOS / Linux / Windows (WSL recommended)
 - sudo privileges (for switching hosts files)
 

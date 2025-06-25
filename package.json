@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/milkmaccya2/hostswitch#readme",
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20.0.0"
   },
   "preferGlobal": true,
   "dependencies": {

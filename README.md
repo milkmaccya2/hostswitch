@@ -28,7 +28,7 @@ HostSwitchは、開発環境やテスト環境で異なるhosts設定を簡単�
 
 ## 要件
 
-- Node.js 14.0.0以上
+- Node.js 20.0.0以上
 - macOS / Linux / Windows (WSL推奨)
 - sudo権限（hostsファイル切り替え時）
 
