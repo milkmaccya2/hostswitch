@@ -3,7 +3,7 @@
 ## 1. 準備
 
 ### package.jsonの更新
-- `name`: ユニークな名前に変更（例: `@yourusername/hostswitch`）
+- `name`: ユニークな名前に変更（例: `@milkmaccya2/hostswitch`）
 - `author`: あなたの名前とメールアドレス
 - `repository`: GitHubリポジトリのURL
 
@@ -16,7 +16,7 @@ npm adduser
 ## 2. パッケージ名の確認
 ```bash
 # 名前が使用可能か確認
-npm view hostswitch
+npm view @milkmaccya2/hostswitch
 ```
 
 ## 3. ローカルテスト
@@ -37,20 +37,20 @@ npm unlink
 npm login
 
 # 公開（初回）
-npm publish
+npm publish --access public
 ```
 
 ## 5. 使用方法
 
 ### グローバルインストール
 ```bash
-npm install -g hostswitch
+npm install -g @milkmaccya2/hostswitch
 hostswitch list
 ```
 
 ### npxで実行
 ```bash
-npx hostswitch list
+npx @milkmaccya2/hostswitch list
 ```
 
 ## 6. アップデート

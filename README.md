@@ -4,7 +4,21 @@
 
 ## インストール
 
+### npmからインストール（推奨）
 ```bash
+# グローバルインストール
+npm install -g @milkmaccya2/hostswitch
+
+# またはnpxで直接実行
+npx @milkmaccya2/hostswitch list
+```
+
+### ソースからインストール
+```bash
+# リポジトリをクローン
+git clone https://github.com/milkmaccya2/hostswitch.git
+cd hostswitch
+
 # 依存関係のインストール
 npm install
 
@@ -16,44 +30,44 @@ npm link
 
 ### プロファイル一覧を表示
 ```bash
-./hostswitch.js list
+hostswitch list
 # または
-./hostswitch.js ls
+hostswitch ls
 ```
 
 ### プロファイルを作成
 ```bash
 # デフォルト内容で作成
-./hostswitch.js create development
+hostswitch create development
 
 # 現在のhostsファイルから作成
-./hostswitch.js create production --from-current
+hostswitch create production --from-current
 ```
 
 ### プロファイルを切り替え（要sudo）
 ```bash
-sudo ./hostswitch.js switch development
+sudo hostswitch switch development
 # または
-sudo ./hostswitch.js use development
+sudo hostswitch use development
 ```
 
 ### プロファイルの内容を表示
 ```bash
-./hostswitch.js show development
+hostswitch show development
 # または
-./hostswitch.js cat development
+hostswitch cat development
 ```
 
 ### プロファイルを編集
 ```bash
-./hostswitch.js edit development
+hostswitch edit development
 ```
 
 ### プロファイルを削除
 ```bash
-./hostswitch.js delete development
+hostswitch delete development
 # または
-./hostswitch.js rm development
+hostswitch rm development
 ```
 
 ## データ保存場所
