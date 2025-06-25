@@ -25,19 +25,47 @@ class HostSwitch {
   }
 
   getCurrentProfile() {
-    try {
-      if (fs.existsSync(this.currentProfileFile)) {
-        const data = fs.readJsonSync(this.currentProfileFile);
-        return data.profile || null;
-      }
-    } catch (err) {
-      console.error(chalk.red('Error reading current profile'));
-    }
-    return null;
+    const data = this.getCurrentProfileData();
+    return data ? data.profile : null;
   }
 
   setCurrentProfile(profileName) {
-    fs.writeJsonSync(this.currentProfileFile, { profile: profileName });
+    const checksum = this.getHostsChecksum();
+    fs.writeJsonSync(this.currentProfileFile, { 
+      profile: profileName,
+      checksum: checksum,
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  getHostsChecksum() {
+    try {
+      const crypto = require('crypto');
+      const content = fs.readFileSync(this.hostsPath, 'utf8');
+      return crypto.createHash('md5').update(content).digest('hex');
+    } catch (err) {
+      return null;
+    }
+  }
+
+  isHostsModified() {
+    const currentData = this.getCurrentProfileData();
+    if (!currentData || !currentData.checksum) {
+      return true; // 初回または情報がない場合は変更されたとみなす
+    }
+    const currentChecksum = this.getHostsChecksum();
+    return currentChecksum !== currentData.checksum;
+  }
+
+  getCurrentProfileData() {
+    try {
+      if (fs.existsSync(this.currentProfileFile)) {
+        return fs.readJsonSync(this.currentProfileFile);
+      }
+    } catch (err) {
+      console.error(chalk.red('Error reading current profile data'));
+    }
+    return null;
   }
 
   backupHosts() {
@@ -109,9 +137,18 @@ class HostSwitch {
       return false;
     }
 
-    const backupPath = this.backupHosts();
-    if (backupPath) {
-      console.log(chalk.dim(`Current hosts backed up to: ${backupPath}`));
+    // 現在のhostsファイルが手動で変更されているか、初回の場合のみバックアップ
+    const currentProfile = this.getCurrentProfile();
+    const isModified = this.isHostsModified();
+    
+    if (!currentProfile || isModified) {
+      const backupPath = this.backupHosts();
+      if (backupPath) {
+        if (isModified && currentProfile) {
+          console.log(chalk.yellow(`Warning: Current hosts file was modified outside of hostswitch.`));
+        }
+        console.log(chalk.dim(`Current hosts backed up to: ${backupPath}`));
+      }
     }
 
     try {
