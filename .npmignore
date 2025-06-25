@@ -1,0 +1,21 @@
+# Development files
+.git
+.gitignore
+*.log
+node_modules/
+
+# Test files
+test/
+*.test.js
+
+# Build files
+.DS_Store
+*.swp
+
+# Config files
+.eslintrc
+.prettierrc
+
+# Documentation
+docs/
+examples/

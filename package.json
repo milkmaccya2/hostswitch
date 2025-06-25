@@ -1,0 +1,33 @@
+{
+  "name": "hostswitch",
+  "version": "1.0.0",
+  "description": "Simple hosts file switcher CLI tool",
+  "main": "hostswitch.js",
+  "bin": {
+    "hostswitch": "./hostswitch.js"
+  },
+  "scripts": {
+    "start": "node hostswitch.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["hosts", "switch", "cli", "hosts-file", "profile", "network"],
+  "author": "milkmaccya2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/milkmaccya2/hostswitch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/milkmaccya2/hostswitch/issues"
+  },
+  "homepage": "https://github.com/milkmaccya2/hostswitch#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "preferGlobal": true,
+  "dependencies": {
+    "commander": "^11.1.0",
+    "fs-extra": "^11.2.0",
+    "chalk": "^4.1.2"
+  }
+}
