@@ -1,5 +1,5 @@
 {
-  "name": "hostswitch",
+  "name": "@milkmaccya2/hostswitch",
   "version": "1.0.0",
   "description": "Simple hosts file switcher CLI tool",
   "main": "hostswitch.js",
