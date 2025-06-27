@@ -3,3 +3,26 @@ node_modules/
 *.log
 *.swp
 .env
+
+# Test coverage reports
+coverage/
+*.lcov
+
+# Build outputs  
+dist/
+build/
+out/
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swo
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

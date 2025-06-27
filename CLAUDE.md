@@ -18,6 +18,50 @@ HostSwitch is a CLI tool for managing multiple hosts file profiles. Current vers
 2. **Test First** - Write tests before implementing features
 3. **Modular Development** - Work on isolated components
 4. **Clear Communication** - Document all changes clearly
+5. **Clean Commits** - Never commit auto-generated files
+
+## Git and Commit Guidelines
+
+### ❌ Never Commit These Files
+```bash
+# Auto-generated files
+coverage/          # Jest coverage reports
+*.lcov             # Coverage data
+dist/              # Build outputs
+build/             # Build outputs
+out/               # Build outputs
+
+# IDE/Editor files (unless project-specific)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store          # Already in .gitignore
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+```
+
+### ✅ Best Practices
+1. **Review before commit**: Always run `git diff --staged`
+2. **Selective staging**: Use `git add <specific-files>` instead of `git add .`
+3. **Check status**: Run `git status` to see what will be committed
+4. **Update .gitignore**: Add patterns for new auto-generated files
+
+### Commit Message Format
+```
+type(scope): description
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
 
 ## Parallel Work Guidelines
 
