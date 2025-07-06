@@ -1,11 +1,17 @@
 {
   "name": "@milkmaccya2/hostswitch",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A simple CLI tool to manage and switch between multiple hosts file profiles for different development environments",
   "main": "hostswitch.js",
   "bin": {
     "hostswitch": "./hostswitch.js"
   },
+  "files": [
+    "hostswitch.js",
+    "LICENSE",
+    "README.md",
+    "README.ja.md"
+  ],
   "scripts": {
     "start": "node hostswitch.js",
     "test": "echo \"Error: no test specified\" && exit 1"
