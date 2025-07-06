@@ -3,6 +3,7 @@
 .gitignore
 *.log
 node_modules/
+.claude/
 
 # Test files
 test/
