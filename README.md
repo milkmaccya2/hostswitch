@@ -3,191 +3,191 @@
 [![npm version](https://badge.fury.io/js/@milkmaccya2%2Fhostswitch.svg)](https://www.npmjs.com/package/@milkmaccya2/hostswitch)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-シンプルなhostsファイル切り替えCLIツール
+A simple CLI tool for switching hosts file profiles
 
-[English](README.en.md)
+[日本語](README.ja.md)
 
-## 概要
+## Overview
 
-HostSwitchは、開発環境やテスト環境で異なるhosts設定を簡単に切り替えるためのCLIツールです。Gas MaskのようなGUIアプリとは異なり、コマンドラインから素早く操作できることを重視しています。
+HostSwitch is a CLI tool that makes it easy to switch between different hosts configurations for development and testing environments. Unlike GUI applications like Gas Mask, it focuses on quick command-line operations.
 
-### こんな人におすすめ
+### Perfect for
 
-- 👨‍💻 複数の開発環境を切り替えるWeb開発者
-- 🔧 ローカル、ステージング、本番環境のテストが必要なエンジニア
-- 🏢 複数のサーバー環境を管理するシステム管理者
-- 🚀 CLIでの素早い操作を好む人
+- 👨‍💻 Web developers working with multiple development environments
+- 🔧 Engineers who need to test across local, staging, and production
+- 🏢 System administrators managing multiple server environments
+- 🚀 Anyone who prefers fast CLI operations
 
-## 主な機能
+## Key Features
 
-- ✅ **複数のhostsプロファイル管理** - 開発、ステージング、本番用など
-- 💾 **自動バックアップ** - 切り替え前に現在のhostsを保存
-- 🎨 **カラフルな出力** - 状態が一目でわかる
-- ⚡ **シンプルなCLI** - 覚えやすいコマンド
-- 🔒 **安全な操作** - sudo権限が必要な操作を明示
+- ✅ **Multiple hosts profile management** - For development, staging, production, etc.
+- 💾 **Automatic backup** - Saves current hosts before switching
+- 🎨 **Colorful output** - Clear status visibility
+- ⚡ **Simple CLI** - Easy-to-remember commands
+- 🔒 **Safe operations** - Explicit sudo requirements
 
-## 要件
+## Requirements
 
-- Node.js 20.0.0以上
-- macOS / Linux / Windows (WSL推奨)
-- sudo権限（hostsファイル切り替え時）
+- Node.js 20.0.0 or higher
+- macOS / Linux / Windows (WSL recommended)
+- sudo permissions (for hosts file switching)
 
-## インストール
+## Installation
 
-### npmからインストール（推奨）
+### Install from npm (Recommended)
 ```bash
-# グローバルインストール
+# Global installation
 npm install -g @milkmaccya2/hostswitch
 
-# またはnpxで直接実行
+# Or run directly with npx
 npx @milkmaccya2/hostswitch list
 ```
 
-### ソースからインストール
+### Install from source
 ```bash
-# リポジトリをクローン
+# Clone repository
 git clone https://github.com/milkmaccya2/hostswitch.git
 cd hostswitch
 
-# 依存関係のインストール
+# Install dependencies
 npm install
 
-# グローバルインストール（オプション）
+# Global installation (optional)
 npm link
 ```
 
-## 使い方
+## Usage
 
-### プロファイル一覧を表示
+### List profiles
 ```bash
 hostswitch list
-# または
+# or
 hostswitch ls
 ```
 
-### プロファイルを作成
+### Create a profile
 ```bash
-# デフォルト内容で作成
+# Create with default content
 hostswitch create development
 
-# 現在のhostsファイルから作成
+# Create from current hosts file
 hostswitch create production --from-current
 ```
 
-### プロファイルを切り替え（要sudo）
+### Switch profile (requires sudo)
 ```bash
 sudo hostswitch switch development
-# または
+# or
 sudo hostswitch use development
 ```
 
-### プロファイルの内容を表示
+### Show profile contents
 ```bash
 hostswitch show development
-# または
+# or
 hostswitch cat development
 ```
 
-### プロファイルを編集
+### Edit a profile
 ```bash
 hostswitch edit development
 ```
 
-### プロファイルを削除
+### Delete a profile
 ```bash
 hostswitch delete development
-# または
+# or
 hostswitch rm development
 ```
 
-## よくある使用例
+## Common Use Cases
 
-### 開発環境のセットアップ
+### Development Environment Setup
 
 ```bash
-# ローカル開発用
+# For local development
 hostswitch create local
 hostswitch edit local
 # 127.0.0.1 api.myapp.local
 # 127.0.0.1 app.myapp.local
 
-# Docker環境用
+# For Docker environment
 hostswitch create docker
 hostswitch edit docker
 # 172.17.0.2 api.myapp.docker
 # 172.17.0.3 db.myapp.docker
 
-# 切り替え
+# Switch between them
 sudo hostswitch switch local
 ```
 
-### チーム開発での活用
+### Team Development
 
 ```bash
-# チームメンバーの環境を参照
+# Reference team member's environment
 hostswitch create team-dev --from-current
 
-# 自分の環境に戻す
+# Switch back to your environment
 sudo hostswitch switch local
 ```
 
-### 本番環境のテスト
+### Production Testing
 
 ```bash
-# 本番環境を指すhostsを作成
+# Create hosts pointing to production
 hostswitch create production
 hostswitch edit production
 # 192.168.1.100 api.myapp.com
 # 192.168.1.101 app.myapp.com
 
-# テスト実施
+# Run tests
 sudo hostswitch switch production
-# テスト完了後
+# After testing
 sudo hostswitch switch local
 ```
 
-## トラブルシューティング
+## Troubleshooting
 
-### sudo権限が必要な理由
+### Why sudo is required
 
-`/etc/hosts`ファイルはroot所有のシステムファイルのため、変更には管理者権限が必要です。
+The `/etc/hosts` file is a system file owned by root, so administrative privileges are required to modify it.
 
 ```bash
-# ✅ 正しい使い方
+# ✅ Correct usage
 sudo hostswitch switch dev
 
-# ❌ エラーになる
+# ❌ Will error
 hostswitch switch dev  # Permission denied
 ```
 
-### プロファイルが見つからない場合
+### Profile not found
 
 ```bash
-# プロファイル一覧を確認
+# Check profile list
 hostswitch list
 
-# プロファイル名のタイポを確認
-hostswitch show <tab>  # bash補完が使える場合
+# Check for typos
+hostswitch show <tab>  # if bash completion is available
 ```
 
-### Windowsでの使用
+### Windows Usage
 
-WindowsではWSL (Windows Subsystem for Linux)の使用を推奨します。ネイティブWindowsで使用する場合は、管理者権限でコマンドプロンプトを実行してください。
+For Windows, we recommend using WSL (Windows Subsystem for Linux). If using native Windows, run Command Prompt as Administrator.
 
-## データ保存場所
+## Data Storage
 
-- プロファイル: `~/.hostswitch/profiles/`
-- バックアップ: `~/.hostswitch/backups/`
-- 現在のプロファイル情報: `~/.hostswitch/current.json`
+- Profiles: `~/.hostswitch/profiles/`
+- Backups: `~/.hostswitch/backups/`
+- Current profile info: `~/.hostswitch/current.json`
 
-## ライセンス
+## License
 
-MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
+MIT License - See [LICENSE](LICENSE) file for details.
 
-## 作者
+## Author
 
 [milkmaccya2](https://github.com/milkmaccya2)
 
-## 貢献
+## Contributing
 
-バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。
+Bug reports and feature requests are welcome at [GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues).
