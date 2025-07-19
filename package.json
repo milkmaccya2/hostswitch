@@ -7,11 +7,15 @@
     "hostswitch": "./dist/hostswitch.js"
   },
   "files": [
-    "dist",
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "!dist/**/__tests__",
+    "!dist/**/__mocks__",
+    "!dist/**/*.test.*",
+    "!dist/**/*.d.ts.map",
     "LICENSE",
     "README.md",
-    "README.ja.md",
-    "package.json"
+    "README.ja.md"
   ],
   "scripts": {
     "build": "tsc",
