@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { PermissionChecker } from '../PermissionChecker'
 import { spawn } from 'child_process'
-import * as fs from 'fs-extra'
 
 vi.mock('child_process')
 vi.mock('fs-extra', () => ({
