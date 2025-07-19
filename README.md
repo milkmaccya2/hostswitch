@@ -170,11 +170,30 @@ npm run dev -- list
 ```
 hostswitch/
 ├── src/
-│   └── hostswitch.ts    # Main TypeScript source
-├── dist/                # Compiled JavaScript (generated)
-├── tsconfig.json        # TypeScript configuration
+│   ├── interfaces/           # Type definitions and abstractions
+│   ├── core/                # Domain logic (business rules)
+│   ├── cli/                 # CLI-specific implementation
+│   ├── infrastructure/      # External dependencies implementation
+│   ├── config/              # Configuration management
+│   └── hostswitch.ts       # Entry point with dependency injection
+├── dist/                    # Compiled JavaScript (generated)
+├── tsconfig.json           # TypeScript configuration
 └── package.json
 ```
+
+### Architecture
+
+The application follows a clean architecture pattern:
+- **Domain Layer**: Pure business logic in `HostSwitchService`
+- **CLI Layer**: Command handling and user interaction
+- **Infrastructure Layer**: File system, logging, and process execution
+- **Dependency Injection**: All dependencies are injected via interfaces
+
+This design enables:
+- Easy unit testing with mocked dependencies
+- Clear separation of concerns
+- Platform-agnostic core logic
+- Future extensibility (e.g., GUI or API interfaces)
 
 ## Troubleshooting
 

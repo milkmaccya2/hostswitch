@@ -170,11 +170,30 @@ npm run dev -- list
 ```
 hostswitch/
 ├── src/
-│   └── hostswitch.ts    # TypeScriptソースコード
-├── dist/                # コンパイル済みJavaScript（自動生成）
-├── tsconfig.json        # TypeScript設定
+│   ├── interfaces/           # 型定義と抽象化レイヤー
+│   ├── core/                # ドメインロジック（ビジネスルール）
+│   ├── cli/                 # CLI専用の実装
+│   ├── infrastructure/      # 外部依存の実装
+│   ├── config/              # 設定管理
+│   └── hostswitch.ts       # 依存性注入付きエントリーポイント
+├── dist/                    # コンパイル済みJavaScript（自動生成）
+├── tsconfig.json           # TypeScript設定
 └── package.json
 ```
+
+### アーキテクチャ
+
+アプリケーションはクリーンアーキテクチャパターンに従います：
+- **ドメイン層**: `HostSwitchService`の純粋なビジネスロジック
+- **CLI層**: コマンド処理とユーザーインタラクション
+- **インフラ層**: ファイルシステム、ログ出力、プロセス実行
+- **依存性注入**: 全ての依存関係はインターフェース経由で注入
+
+この設計により以下が可能になります：
+- モックされた依存関係での簡単な単体テスト
+- 関心の明確な分離
+- プラットフォーム非依存のコアロジック
+- 将来の拡張性（GUIやAPIインターフェースなど）
 
 ## トラブルシューティング
 
