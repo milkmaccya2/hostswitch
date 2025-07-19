@@ -52,6 +52,9 @@ cd hostswitch
 # 依存関係のインストール
 npm install
 
+# TypeScriptのビルド
+npm run build
+
 # グローバルインストール（オプション）
 npm link
 ```
@@ -146,6 +149,33 @@ sudo hostswitch switch production
 sudo hostswitch switch local
 ```
 
+## 開発
+
+### ソースからのビルド
+```bash
+# 依存関係のインストール
+npm install
+
+# TypeScriptのビルド
+npm run build
+
+# 開発用のウォッチモード
+npm run build:watch
+
+# 開発モードで実行
+npm run dev -- list
+```
+
+### プロジェクト構造
+```
+hostswitch/
+├── src/
+│   └── hostswitch.ts    # TypeScriptソースコード
+├── dist/                # コンパイル済みJavaScript（自動生成）
+├── tsconfig.json        # TypeScript設定
+└── package.json
+```
+
 ## トラブルシューティング
 
 ### sudo権限が必要な理由
@@ -173,6 +203,8 @@ hostswitch show <tab>  # bash補完が使える場合
 ### Windowsでの使用
 
 WindowsではWSL (Windows Subsystem for Linux)の使用を推奨します。ネイティブWindowsで使用する場合は、管理者権限でコマンドプロンプトを実行してください。
+
+**注意**: ネイティブWindowsサポートが改善されました。WindowsのhostsファイルパスC:\Windows\System32\drivers\etc\hosts）を自動的に検出します。
 
 ## データ保存場所
 

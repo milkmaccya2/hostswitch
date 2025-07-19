@@ -52,6 +52,9 @@ cd hostswitch
 # Install dependencies
 npm install
 
+# Build TypeScript source
+npm run build
+
 # Global installation (optional)
 npm link
 ```
@@ -146,6 +149,33 @@ sudo hostswitch switch production
 sudo hostswitch switch local
 ```
 
+## Development
+
+### Building from source
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Watch mode for development
+npm run build:watch
+
+# Run in development mode
+npm run dev -- list
+```
+
+### Project Structure
+```
+hostswitch/
+├── src/
+│   └── hostswitch.ts    # Main TypeScript source
+├── dist/                # Compiled JavaScript (generated)
+├── tsconfig.json        # TypeScript configuration
+└── package.json
+```
+
 ## Troubleshooting
 
 ### Why sudo is required
@@ -173,6 +203,8 @@ hostswitch show <tab>  # if bash completion is available
 ### Windows Usage
 
 For Windows, we recommend using WSL (Windows Subsystem for Linux). If using native Windows, run Command Prompt as Administrator.
+
+**Note**: Native Windows support has been improved. The tool now automatically detects the Windows hosts file location (`C:\Windows\System32\drivers\etc\hosts`).
 
 ## Data Storage
 

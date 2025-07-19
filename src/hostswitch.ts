@@ -1,35 +1,50 @@
 #!/usr/bin/env node
 
-const fs = require('fs-extra');
-const path = require('path');
-const os = require('os');
-const { program } = require('commander');
-const chalk = require('chalk');
-const { execSync } = require('child_process');
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as os from 'os';
+import { program } from 'commander';
+import chalk from 'chalk';
+import { execSync } from 'child_process';
+import * as crypto from 'crypto';
+
+interface ProfileData {
+  profile: string | null;
+  checksum: string | null;
+  updatedAt: string;
+}
 
 class HostSwitch {
+  private readonly configDir: string;
+  private readonly profilesDir: string;
+  private readonly backupDir: string;
+  private readonly hostsPath: string;
+  private readonly currentProfileFile: string;
+
   constructor() {
     this.configDir = path.join(os.homedir(), '.hostswitch');
     this.profilesDir = path.join(this.configDir, 'profiles');
     this.backupDir = path.join(this.configDir, 'backups');
-    this.hostsPath = '/etc/hosts';
+    this.hostsPath = process.platform === 'win32' 
+      ? 'C:\\Windows\\System32\\drivers\\etc\\hosts'
+      : '/etc/hosts';
     this.currentProfileFile = path.join(this.configDir, 'current.json');
     
     this.ensureDirs();
   }
 
-  ensureDirs() {
+  private ensureDirs(): void {
     fs.ensureDirSync(this.configDir);
     fs.ensureDirSync(this.profilesDir);
     fs.ensureDirSync(this.backupDir);
   }
 
-  getCurrentProfile() {
+  getCurrentProfile(): string | null {
     const data = this.getCurrentProfileData();
     return data ? data.profile : null;
   }
 
-  setCurrentProfile(profileName) {
+  private setCurrentProfile(profileName: string): void {
     const checksum = this.getHostsChecksum();
     fs.writeJsonSync(this.currentProfileFile, { 
       profile: profileName,
@@ -38,9 +53,8 @@ class HostSwitch {
     });
   }
 
-  getHostsChecksum() {
+  private getHostsChecksum(): string | null {
     try {
-      const crypto = require('crypto');
       const content = fs.readFileSync(this.hostsPath, 'utf8');
       return crypto.createHash('md5').update(content).digest('hex');
     } catch (err) {
@@ -48,7 +62,7 @@ class HostSwitch {
     }
   }
 
-  isHostsModified() {
+  private isHostsModified(): boolean {
     const currentData = this.getCurrentProfileData();
     if (!currentData || !currentData.checksum) {
       return true; // 初回または情報がない場合は変更されたとみなす
@@ -57,10 +71,10 @@ class HostSwitch {
     return currentChecksum !== currentData.checksum;
   }
 
-  getCurrentProfileData() {
+  private getCurrentProfileData(): ProfileData | null {
     try {
       if (fs.existsSync(this.currentProfileFile)) {
-        return fs.readJsonSync(this.currentProfileFile);
+        return fs.readJsonSync(this.currentProfileFile) as ProfileData;
       }
     } catch (err) {
       console.error(chalk.red('Error reading current profile data'));
@@ -68,7 +82,7 @@ class HostSwitch {
     return null;
   }
 
-  backupHosts() {
+  private backupHosts(): string | null {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = path.join(this.backupDir, `hosts_${timestamp}`);
     try {
@@ -80,7 +94,7 @@ class HostSwitch {
     }
   }
 
-  listProfiles() {
+  listProfiles(): void {
     const profiles = fs.readdirSync(this.profilesDir)
       .filter(file => file.endsWith('.hosts'))
       .map(file => file.replace('.hosts', ''));
@@ -99,7 +113,7 @@ class HostSwitch {
     });
   }
 
-  createProfile(name, fromCurrent = false) {
+  createProfile(name: string, fromCurrent: boolean = false): boolean {
     const profilePath = path.join(this.profilesDir, `${name}.hosts`);
     
     if (fs.existsSync(profilePath)) {
@@ -124,12 +138,13 @@ class HostSwitch {
       }
       return true;
     } catch (err) {
-      console.error(chalk.red(`Error creating profile: ${err.message}`));
+      const error = err as Error;
+      console.error(chalk.red(`Error creating profile: ${error.message}`));
       return false;
     }
   }
 
-  switchProfile(name) {
+  switchProfile(name: string): boolean {
     const profilePath = path.join(this.profilesDir, `${name}.hosts`);
     
     if (!fs.existsSync(profilePath)) {
@@ -157,16 +172,17 @@ class HostSwitch {
       console.log(chalk.green(`Switched to profile '${name}'.`));
       return true;
     } catch (err) {
-      if (err.code === 'EACCES') {
+      const error = err as NodeJS.ErrnoException;
+      if (error.code === 'EACCES') {
         console.error(chalk.red('Error: Permission denied. Run with sudo.'));
       } else {
-        console.error(chalk.red(`Error switching profile: ${err.message}`));
+        console.error(chalk.red(`Error switching profile: ${error.message}`));
       }
       return false;
     }
   }
 
-  deleteProfile(name) {
+  deleteProfile(name: string): boolean {
     const profilePath = path.join(this.profilesDir, `${name}.hosts`);
     
     if (!fs.existsSync(profilePath)) {
@@ -185,12 +201,13 @@ class HostSwitch {
       console.log(chalk.green(`Profile '${name}' deleted.`));
       return true;
     } catch (err) {
-      console.error(chalk.red(`Error deleting profile: ${err.message}`));
+      const error = err as Error;
+      console.error(chalk.red(`Error deleting profile: ${error.message}`));
       return false;
     }
   }
 
-  showProfile(name) {
+  showProfile(name: string): boolean {
     const profilePath = path.join(this.profilesDir, `${name}.hosts`);
     
     if (!fs.existsSync(profilePath)) {
@@ -206,7 +223,7 @@ class HostSwitch {
     return true;
   }
 
-  editProfile(name) {
+  editProfile(name: string): boolean {
     const profilePath = path.join(this.profilesDir, `${name}.hosts`);
     
     if (!fs.existsSync(profilePath)) {
@@ -219,7 +236,8 @@ class HostSwitch {
       execSync(`${editor} ${profilePath}`, { stdio: 'inherit' });
       return true;
     } catch (err) {
-      console.error(chalk.red(`Error opening editor: ${err.message}`));
+      const error = err as Error;
+      console.error(chalk.red(`Error opening editor: ${error.message}`));
       return false;
     }
   }
@@ -227,10 +245,13 @@ class HostSwitch {
 
 const hs = new HostSwitch();
 
+// Get version from package.json
+const packageJson = fs.readJsonSync(path.join(__dirname, '..', 'package.json'));
+
 program
   .name('hostswitch')
   .description('Simple hosts file switcher')
-  .version('1.0.0');
+  .version(packageJson.version);
 
 program
   .command('list')
@@ -244,15 +265,15 @@ program
   .command('create <name>')
   .description('Create a new profile')
   .option('-c, --from-current', 'Create from current hosts file')
-  .action((name, options) => {
-    hs.createProfile(name, options.fromCurrent);
+  .action((name: string, options: { fromCurrent?: boolean }) => {
+    hs.createProfile(name, options.fromCurrent || false);
   });
 
 program
   .command('switch <name>')
   .alias('use')
   .description('Switch to a profile (requires sudo)')
-  .action((name) => {
+  .action((name: string) => {
     hs.switchProfile(name);
   });
 
@@ -260,7 +281,7 @@ program
   .command('delete <name>')
   .alias('rm')
   .description('Delete a profile')
-  .action((name) => {
+  .action((name: string) => {
     hs.deleteProfile(name);
   });
 
@@ -268,14 +289,14 @@ program
   .command('show <name>')
   .alias('cat')
   .description('Show profile content')
-  .action((name) => {
+  .action((name: string) => {
     hs.showProfile(name);
   });
 
 program
   .command('edit <name>')
   .description('Edit a profile')
-  .action((name) => {
+  .action((name: string) => {
     hs.editProfile(name);
   });
 
