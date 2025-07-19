@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { CliApplication } from '../CliApplication'
-import { CommandHandler } from '../commands'
 import { program } from 'commander'
 
 vi.mock('commander', () => ({
@@ -93,7 +92,7 @@ describe('CliApplication', () => {
 
       cliApp.setupCommands()
 
-      const descriptions = mockProgram.description.mock.calls.map(call => call[0])
+      const descriptions = mockProgram.description.mock.calls.map((call: any) => call[0])
       
       expect(descriptions).toContain('List all profiles')
       expect(descriptions).toContain('Create a new profile')
@@ -122,7 +121,7 @@ describe('CliApplication', () => {
     it('listコマンドのアクションが正しく設定される', () => {
       // actionの呼び出しを確認するため、actionコールの引数を取得
       const actionCalls = mockProgram.action.mock.calls
-      const listActionCall = actionCalls.find((call, index) => {
+      const listActionCall = actionCalls.find((_call: any, index: number) => {
         // listコマンドに対応するactionを特定
         const commandCalls = mockProgram.command.mock.calls
         return commandCalls[index] && commandCalls[index][0] === 'list'
@@ -134,7 +133,7 @@ describe('CliApplication', () => {
 
     it('createコマンドのアクションが正しく設定される', () => {
       const actionCalls = mockProgram.action.mock.calls
-      const createActionCall = actionCalls.find((call, index) => {
+      const createActionCall = actionCalls.find((_call: any, index: number) => {
         const commandCalls = mockProgram.command.mock.calls
         return commandCalls[index] && commandCalls[index][0] === 'create <name>'
       })

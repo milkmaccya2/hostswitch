@@ -1,6 +1,7 @@
 import { 
   IFileSystem, 
   ILogger, 
+  IPermissionChecker,
   HostSwitchConfig, 
   SwitchResult, 
   CreateProfileResult, 
@@ -18,7 +19,8 @@ export class HostSwitchService {
   constructor(
     private fileSystem: IFileSystem,
     private logger: ILogger,
-    private config: HostSwitchConfig
+    private config: HostSwitchConfig,
+    private permissionChecker: IPermissionChecker
   ) {
     this.ensureDirs()
     this.profileManager = new ProfileManager(fileSystem, config)
@@ -45,7 +47,7 @@ export class HostSwitchService {
     return this.profileManager.createProfile(name, fromCurrent)
   }
 
-  switchProfile(name: string): SwitchResult {
+  async switchProfile(name: string): Promise<SwitchResult> {
     if (!this.profileManager.profileExists(name)) {
       return {
         success: false,
@@ -53,6 +55,22 @@ export class HostSwitchService {
       }
     }
 
+    // 権限チェック - sudo必要かつsudoで実行されていない場合は自動sudo実行
+    const needsSudo = await this.permissionChecker.requiresSudo(this.config.hostsPath)
+    if (needsSudo) {
+      this.logger.info('Requesting administrative access...')
+      const sudoResult = await this.permissionChecker.rerunWithSudo(['switch', name])
+      return {
+        success: sudoResult.success,
+        message: sudoResult.message,
+        requiresSudo: true
+      }
+    }
+
+    return this.doSwitchProfile(name)
+  }
+
+  private doSwitchProfile(name: string): SwitchResult {
     const currentProfile = this.getCurrentProfile()
     const isModified = this.currentProfileManager.isHostsModified()
     let backupPath: string | undefined
@@ -78,7 +96,8 @@ export class HostSwitchService {
       if (error.code === 'EACCES') {
         return {
           success: false,
-          message: 'Permission denied. Run with sudo.'
+          message: 'Permission denied. Run with sudo.',
+          requiresSudo: true
         }
       } else {
         return {

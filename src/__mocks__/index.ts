@@ -1,4 +1,4 @@
-import { IFileSystem, ILogger, IProcessManager } from '../interfaces'
+import { IFileSystem, ILogger, IProcessManager, IPermissionChecker, SudoResult } from '../interfaces'
 
 export class MockFileSystem implements IFileSystem {
   private files = new Map<string, string>()
@@ -199,5 +199,61 @@ export class MockProcessManager implements IProcessManager {
     if (message) {
       this.errorMessage = message
     }
+  }
+}
+
+export class MockPermissionChecker implements IPermissionChecker {
+  public canWriteToFileResult = true
+  public requiresSudoResult = false
+  public isRunningAsSudoResult = false
+  public rerunWithSudoResult: SudoResult = { success: true, message: 'Success' }
+  public calls: Array<{ method: string; args: any[] }> = []
+
+  private recordCall(method: string, ...args: any[]) {
+    this.calls.push({ method, args })
+  }
+
+  async canWriteToFile(filePath: string): Promise<boolean> {
+    this.recordCall('canWriteToFile', filePath)
+    return this.canWriteToFileResult
+  }
+
+  async requiresSudo(filePath: string): Promise<boolean> {
+    this.recordCall('requiresSudo', filePath)
+    return this.requiresSudoResult
+  }
+
+  isRunningAsSudo(): boolean {
+    this.recordCall('isRunningAsSudo')
+    return this.isRunningAsSudoResult
+  }
+
+  async rerunWithSudo(args: string[]): Promise<SudoResult> {
+    this.recordCall('rerunWithSudo', args)
+    return this.rerunWithSudoResult
+  }
+
+  clear(): void {
+    this.calls = []
+    this.canWriteToFileResult = true
+    this.requiresSudoResult = false
+    this.isRunningAsSudoResult = false
+    this.rerunWithSudoResult = { success: true, message: 'Success' }
+  }
+
+  setCanWriteToFile(result: boolean): void {
+    this.canWriteToFileResult = result
+  }
+
+  setRequiresSudo(result: boolean): void {
+    this.requiresSudoResult = result
+  }
+
+  setRunningAsSudo(result: boolean): void {
+    this.isRunningAsSudoResult = result
+  }
+
+  setRerunWithSudoResult(result: SudoResult): void {
+    this.rerunWithSudoResult = result
   }
 }

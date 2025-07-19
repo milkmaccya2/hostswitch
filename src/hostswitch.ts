@@ -6,6 +6,7 @@ import { CliApplication } from './cli/CliApplication';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { ProcessManager } from './infrastructure/ProcessManager';
+import { PermissionChecker } from './infrastructure/PermissionChecker';
 import { createConfig } from './config';
 
 // 依存性の組み立て
@@ -13,9 +14,10 @@ const config = createConfig();
 const fileSystem = new FileSystemAdapter();
 const logger = new ChalkLogger();
 const processManager = new ProcessManager();
+const permissionChecker = new PermissionChecker();
 
 // サービス層の初期化
-const hostSwitchService = new HostSwitchService(fileSystem, logger, config);
+const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker);
 
 // CLI層の初期化
 const commandHandler = new CommandHandler(hostSwitchService, logger, processManager);

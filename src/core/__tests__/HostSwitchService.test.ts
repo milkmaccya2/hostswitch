@@ -11,7 +11,8 @@ describe('HostSwitchService - 統合テスト', () => {
     service = new HostSwitchService(
       mocks.mockFileSystem,
       mocks.mockLogger,
-      mocks.config
+      mocks.config,
+      mocks.mockPermissionChecker
     )
   })
 
@@ -45,13 +46,13 @@ describe('HostSwitchService - 統合テスト', () => {
   })
 
   describe('switchProfile() - 複雑なシナリオ', () => {
-    it('完全なワークフロー: 作成→切り替え→状態確認', () => {
+    it('完全なワークフロー: 作成→切り替え→状態確認', async () => {
       // プロファイル作成
       const createResult = service.createProfile('workflow-test')
       expect(createResult.success).toBe(true)
       
       // プロファイル切り替え
-      const switchResult = service.switchProfile('workflow-test')
+      const switchResult = await service.switchProfile('workflow-test')
       expect(switchResult.success).toBe(true)
       
       // 現在のプロファイル確認
@@ -64,28 +65,28 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(activeProfile?.isCurrent).toBe(true)
     })
 
-    it('存在しないプロファイルへの切り替えでエラー', () => {
-      const result = service.switchProfile('nonexistent-profile')
+    it('存在しないプロファイルへの切り替えでエラー', async () => {
+      const result = await service.switchProfile('nonexistent-profile')
       
       expect(result.success).toBe(false)
       expect(result.message).toContain('does not exist')
     })
 
-    it('hosts変更検出時の警告ログとバックアップ作成', () => {
+    it('hosts変更検出時の警告ログとバックアップ作成', async () => {
       createTestProfiles(mocks.mockFileSystem, mocks.config)
       setCurrentProfile(mocks.mockFileSystem, mocks.config, 'dev', 'old-checksum')
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'modified hosts content')
       
-      const result = service.switchProfile('staging')
+      const result = await service.switchProfile('staging')
       
       expect(result.success).toBe(true)
       expect(result.backupPath).toBeDefined()
       expect(mocks.mockLogger.hasMessage('modified outside', 'warn')).toBe(true)
     })
 
-    it('プロファイル削除とアクティブプロファイル保護', () => {
+    it('プロファイル削除とアクティブプロファイル保護', async () => {
       service.createProfile('active-profile')
-      service.switchProfile('active-profile')
+      await service.switchProfile('active-profile')
       
       // アクティブなプロファイルは削除できない
       const deleteResult = service.deleteProfile('active-profile')
@@ -94,7 +95,7 @@ describe('HostSwitchService - 統合テスト', () => {
       
       // 別のプロファイルに切り替え後は削除可能
       service.createProfile('another-profile')
-      service.switchProfile('another-profile')
+      await service.switchProfile('another-profile')
       
       const deleteResult2 = service.deleteProfile('active-profile')
       expect(deleteResult2.success).toBe(true)
@@ -120,7 +121,7 @@ describe('HostSwitchService - 統合テスト', () => {
   })
 
   describe('エラーハンドリング - 統合シナリオ', () => {
-    it('switchProfile()でEACCESエラー時の適切な処理', () => {
+    it('switchProfile()でEACCESエラー時の適切な処理', async () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'content')
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original')
       
@@ -137,7 +138,7 @@ describe('HostSwitchService - 統合テスト', () => {
         return originalCopySync.call(mocks.mockFileSystem, src, dest)
       }
       
-      const result = service.switchProfile('dev')
+      const result = await service.switchProfile('dev')
       
       expect(result.success).toBe(false)
       expect(result.message).toContain('Permission denied')
@@ -146,7 +147,7 @@ describe('HostSwitchService - 統合テスト', () => {
       mocks.mockFileSystem.copySync = originalCopySync
     })
 
-    it('switchProfile()でその他のエラー時の適切な処理', () => {
+    it('switchProfile()でその他のエラー時の適切な処理', async () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'content')
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original')
       
@@ -161,7 +162,7 @@ describe('HostSwitchService - 統合テスト', () => {
         return originalCopySync.call(mocks.mockFileSystem, src, dest)
       }
       
-      const result = service.switchProfile('dev')
+      const result = await service.switchProfile('dev')
       
       expect(result.success).toBe(false)
       expect(result.message).toContain('Error switching profile')
@@ -170,7 +171,7 @@ describe('HostSwitchService - 統合テスト', () => {
       mocks.mockFileSystem.copySync = originalCopySync
     })
 
-    it('バックアップ失敗後もプロファイル切り替えは継続', () => {
+    it('バックアップ失敗後もプロファイル切り替えは継続', async () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content')
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original content')
       
@@ -185,7 +186,7 @@ describe('HostSwitchService - 統合テスト', () => {
         return originalCopySync.call(mocks.mockFileSystem, src, dest)
       }
       
-      const result = service.switchProfile('dev')
+      const result = await service.switchProfile('dev')
       
       // バックアップは失敗したが、切り替えは成功
       expect(result.success).toBe(true)
@@ -193,6 +194,63 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(service.getCurrentProfile()).toBe('dev')
       
       mocks.mockFileSystem.copySync = originalCopySync
+    })
+  })
+
+  describe('sudo権限チェック', () => {
+    it('sudoが必要な場合は自動的にsudo実行する', async () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content')
+      mocks.mockPermissionChecker.requiresSudoResult = true
+      mocks.mockPermissionChecker.rerunWithSudoResult = { 
+        success: true, 
+        message: 'Successfully switched with sudo' 
+      }
+      
+      const result = await service.switchProfile('dev')
+      
+      // モックの呼び出し履歴を確認
+      const requiresSudoCalls = mocks.mockPermissionChecker.calls.filter(call => call.method === 'requiresSudo')
+      const rerunWithSudoCalls = mocks.mockPermissionChecker.calls.filter(call => call.method === 'rerunWithSudo')
+      
+      expect(requiresSudoCalls).toHaveLength(1)
+      expect(requiresSudoCalls[0].args[0]).toBe(mocks.config.hostsPath)
+      expect(rerunWithSudoCalls).toHaveLength(1)
+      expect(rerunWithSudoCalls[0].args[0]).toEqual(['switch', 'dev'])
+      expect(result.success).toBe(true)
+      expect(result.message).toBe('Successfully switched with sudo')
+      expect(result.requiresSudo).toBe(true)
+    })
+
+    it('sudo実行が失敗した場合はエラーを返す', async () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content')
+      mocks.mockPermissionChecker.requiresSudoResult = true
+      mocks.mockPermissionChecker.rerunWithSudoResult = { 
+        success: false, 
+        message: 'Sudo authentication failed' 
+      }
+      
+      const result = await service.switchProfile('dev')
+      
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Sudo authentication failed')
+      expect(result.requiresSudo).toBe(true)
+    })
+
+    it('sudoが不要な場合は通常の処理を実行', async () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content')
+      mocks.mockPermissionChecker.requiresSudoResult = false
+      
+      const result = await service.switchProfile('dev')
+      
+      // モックの呼び出し履歴を確認
+      const requiresSudoCalls = mocks.mockPermissionChecker.calls.filter(call => call.method === 'requiresSudo')
+      const rerunWithSudoCalls = mocks.mockPermissionChecker.calls.filter(call => call.method === 'rerunWithSudo')
+      
+      expect(requiresSudoCalls).toHaveLength(1)
+      expect(requiresSudoCalls[0].args[0]).toBe(mocks.config.hostsPath)
+      expect(rerunWithSudoCalls).toHaveLength(0)
+      expect(result.success).toBe(true)
+      expect(result.requiresSudo).toBeUndefined()
     })
   })
 })

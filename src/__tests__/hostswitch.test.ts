@@ -77,7 +77,8 @@ describe('hostswitch.ts - エントリーポイント', () => {
       expect(HostSwitchService).toHaveBeenCalledWith(
         mockFileSystemAdapter,
         mockChalkLogger,
-        expect.any(Object) // config
+        expect.any(Object), // config
+        expect.any(Object)  // permissionChecker
       )
 
       // CLI層が初期化される
@@ -177,7 +178,8 @@ describe('hostswitch.ts - エントリーポイント', () => {
           backupDir: '/test/.hostswitch/backups',
           hostsPath: '/etc/hosts',
           currentProfileFile: '/test/.hostswitch/current.json'
-        })
+        }),
+        expect.any(Object)  // permissionChecker
       )
     })
 
@@ -206,7 +208,6 @@ describe('hostswitch.ts - エントリーポイント', () => {
       const createConfigCall = vi.mocked(createConfig).mock.invocationCallOrder[0]
       const fileSystemCall = vi.mocked(FileSystemAdapter).mock.invocationCallOrder[0]
       const loggerCall = vi.mocked(ChalkLogger).mock.invocationCallOrder[0]
-      const processManagerCall = vi.mocked(ProcessManager).mock.invocationCallOrder[0]
       const serviceCall = vi.mocked(HostSwitchService).mock.invocationCallOrder[0]
       const handlerCall = vi.mocked(CommandHandler).mock.invocationCallOrder[0]
       const cliCall = vi.mocked(CliApplication).mock.invocationCallOrder[0]

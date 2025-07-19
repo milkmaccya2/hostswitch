@@ -31,6 +31,18 @@ export interface IProcessManager {
   executeEditor(editor: string, filePath: string): Promise<void>;
 }
 
+export interface IPermissionChecker {
+  canWriteToFile(filePath: string): Promise<boolean>;
+  requiresSudo(filePath: string): Promise<boolean>;
+  isRunningAsSudo(): boolean;
+  rerunWithSudo(args: string[]): Promise<SudoResult>;
+}
+
+export interface SudoResult {
+  success: boolean;
+  message?: string;
+}
+
 export interface HostSwitchConfig {
   configDir: string;
   profilesDir: string;
@@ -43,6 +55,7 @@ export interface SwitchResult {
   success: boolean;
   message?: string;
   backupPath?: string;
+  requiresSudo?: boolean;
 }
 
 export interface CreateProfileResult {

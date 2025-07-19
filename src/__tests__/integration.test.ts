@@ -5,6 +5,7 @@ import { CliApplication } from '../cli/CliApplication'
 import { FileSystemAdapter } from '../infrastructure/FileSystemAdapter'
 import { ChalkLogger } from '../infrastructure/ChalkLogger'
 import { ProcessManager } from '../infrastructure/ProcessManager'
+import { PermissionChecker } from '../infrastructure/PermissionChecker'
 import { createConfig } from '../config'
 
 // 統合テスト - 各層の結合を確認
@@ -29,8 +30,9 @@ describe('Integration Tests', () => {
       const config = createConfig()
       const fileSystem = new FileSystemAdapter()
       const logger = new ChalkLogger()
+      const permissionChecker = new PermissionChecker()
 
-      const hostSwitchService = new HostSwitchService(fileSystem, logger, config)
+      const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker)
 
       expect(hostSwitchService).toBeInstanceOf(HostSwitchService)
       expect(hostSwitchService.getProfiles).toBeDefined()
@@ -43,8 +45,9 @@ describe('Integration Tests', () => {
       const fileSystem = new FileSystemAdapter()
       const logger = new ChalkLogger()
       const processManager = new ProcessManager()
+      const permissionChecker = new PermissionChecker()
 
-      const hostSwitchService = new HostSwitchService(fileSystem, logger, config)
+      const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker)
       const commandHandler = new CommandHandler(hostSwitchService, logger, processManager)
 
       expect(commandHandler).toBeInstanceOf(CommandHandler)
@@ -58,8 +61,9 @@ describe('Integration Tests', () => {
       const fileSystem = new FileSystemAdapter()
       const logger = new ChalkLogger()
       const processManager = new ProcessManager()
+      const permissionChecker = new PermissionChecker()
 
-      const hostSwitchService = new HostSwitchService(fileSystem, logger, config)
+      const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker)
       const commandHandler = new CommandHandler(hostSwitchService, logger, processManager)
       const cliApp = new CliApplication(commandHandler)
 
@@ -74,6 +78,7 @@ describe('Integration Tests', () => {
     let fileSystem: any
     let logger: any
     let processManager: any
+    let permissionChecker: any
     let hostSwitchService: HostSwitchService
     let commandHandler: CommandHandler
 
@@ -82,8 +87,9 @@ describe('Integration Tests', () => {
       fileSystem = new FileSystemAdapter()
       logger = new ChalkLogger()
       processManager = new ProcessManager()
+      permissionChecker = new PermissionChecker()
 
-      hostSwitchService = new HostSwitchService(fileSystem, logger, config)
+      hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker)
       commandHandler = new CommandHandler(hostSwitchService, logger, processManager)
 
       // ログ出力をモック
@@ -138,7 +144,8 @@ describe('Integration Tests', () => {
       const ensureDirSpy = vi.spyOn(fileSystem, 'ensureDirSync').mockImplementation(() => {})
 
       // サービスを作成してensureDirsが呼ばれることを確認
-      new HostSwitchService(fileSystem, logger, config)
+      const permissionChecker = new PermissionChecker()
+      new HostSwitchService(fileSystem, logger, config, permissionChecker)
 
       expect(ensureDirSpy).toHaveBeenCalledWith(config.configDir)
       expect(ensureDirSpy).toHaveBeenCalledWith(config.profilesDir)
@@ -164,7 +171,8 @@ describe('Integration Tests', () => {
       const logger = new ChalkLogger()
       const processManager = new ProcessManager()
 
-      const hostSwitchService = new HostSwitchService(fileSystem, logger, config)
+      const permissionChecker = new PermissionChecker()
+      const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker)
       const commandHandler = new CommandHandler(hostSwitchService, logger, processManager)
       const cliApp = new CliApplication(commandHandler)
 

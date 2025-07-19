@@ -34,7 +34,7 @@ export class CommandHandler {
   }
 
   async handleSwitch(name: string): Promise<void> {
-    const result = this.service.switchProfile(name);
+    const result = await this.service.switchProfile(name);
     
     if (result.success) {
       if (result.backupPath) {

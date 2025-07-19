@@ -15,6 +15,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "postbuild": "chmod +x dist/hostswitch.js",
     "build:watch": "tsc --watch",
     "start": "node dist/hostswitch.js",
     "dev": "ts-node src/hostswitch.ts",

@@ -1,5 +1,5 @@
 import { HostSwitchConfig } from '../../interfaces'
-import { MockFileSystem, MockLogger } from '../../__mocks__'
+import { MockFileSystem, MockLogger, MockPermissionChecker } from '../../__mocks__'
 
 export function createTestConfig(): HostSwitchConfig {
   return {
@@ -14,6 +14,7 @@ export function createTestConfig(): HostSwitchConfig {
 export function createTestMocks() {
   const mockFileSystem = new MockFileSystem()
   const mockLogger = new MockLogger()
+  const mockPermissionChecker = new MockPermissionChecker()
   const config = createTestConfig()
 
   mockFileSystem.ensureDirSync(config.configDir)
@@ -23,6 +24,7 @@ export function createTestMocks() {
   return {
     mockFileSystem,
     mockLogger,
+    mockPermissionChecker,
     config
   }
 }

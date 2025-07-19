@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { CommandHandler } from '../index'
-import { HostSwitchService } from '../../../core/HostSwitchService'
 import { ILogger, IProcessManager } from '../../../interfaces'
 
 describe('CommandHandler', () => {
