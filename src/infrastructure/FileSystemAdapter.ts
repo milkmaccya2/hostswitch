@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import { IFileSystem } from '../interfaces';
+import type { IFileSystem } from '../interfaces';
 
 export class FileSystemAdapter implements IFileSystem {
   async readFile(path: string): Promise<string> {

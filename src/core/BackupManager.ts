@@ -1,4 +1,4 @@
-import { IFileSystem, HostSwitchConfig } from '../interfaces'
+import type { HostSwitchConfig, IFileSystem } from '../interfaces';
 
 export class BackupManager {
   constructor(
@@ -7,13 +7,13 @@ export class BackupManager {
   ) {}
 
   backupHosts(): string | undefined {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-    const backupPath = `${this.config.backupDir}/hosts_${timestamp}`
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupPath = `${this.config.backupDir}/hosts_${timestamp}`;
     try {
-      this.fileSystem.copySync(this.config.hostsPath, backupPath)
-      return backupPath
+      this.fileSystem.copySync(this.config.hostsPath, backupPath);
+      return backupPath;
     } catch (err) {
-      return undefined
+      return undefined;
     }
   }
 }

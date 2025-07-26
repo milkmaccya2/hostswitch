@@ -115,9 +115,10 @@ hostswitch edit development
 
 ### プロファイルを削除
 ```bash
-hostswitch delete development
+# 安全のため確認フラグが必要
+hostswitch delete development --force
 # または
-hostswitch rm development
+hostswitch rm development --force
 ```
 
 ## よくある使用例
@@ -181,6 +182,41 @@ npm run build:watch
 
 # 開発モードで実行
 npm run dev -- list
+```
+
+### コード品質
+プロジェクトでは**Biome**をlintingとフォーマットに使用：
+
+```bash
+# lintエラーをチェック
+npm run lint
+
+# lintとフォーマットの問題を自動修正
+npm run lint:fix
+
+# フォーマットのみ実行
+npm run format
+
+# フォーマットのチェックのみ（修正なし）
+npm run format:check
+
+# linting + フォーマット + テストを一括実行（CI推奨）
+npm run check
+```
+
+### テスト
+```bash
+# ウォッチモードでテスト実行
+npm test
+
+# テストを一回実行
+npm run test:run
+
+# テストUIを開く
+npm run test:ui
+
+# カバレッジレポート生成
+npm run test:coverage
 ```
 
 ### プロジェクト構造

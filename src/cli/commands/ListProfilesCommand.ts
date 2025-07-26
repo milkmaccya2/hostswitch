@@ -1,5 +1,5 @@
-import { ICommand, ICommandResult } from '../../interfaces';
-import { HostSwitchFacade } from '../HostSwitchFacade';
+import type { ICommand, ICommandResult } from '../../interfaces';
+import type { HostSwitchFacade } from '../HostSwitchFacade';
 
 export class ListProfilesCommand implements ICommand {
   constructor(private facade: HostSwitchFacade) {}

@@ -115,9 +115,10 @@ hostswitch edit development
 
 ### Delete a profile
 ```bash
-hostswitch delete development
+# Delete with confirmation flag (required for safety)
+hostswitch delete development --force
 # or
-hostswitch rm development
+hostswitch rm development --force
 ```
 
 ## Common Use Cases
@@ -181,6 +182,41 @@ npm run build:watch
 
 # Run in development mode
 npm run dev -- list
+```
+
+### Code Quality
+The project uses **Biome** for linting and formatting:
+
+```bash
+# Check for linting errors
+npm run lint
+
+# Auto-fix linting and formatting issues
+npm run lint:fix
+
+# Format code only
+npm run format
+
+# Check formatting without fixing
+npm run format:check
+
+# Run linting + formatting + tests (recommended for CI)
+npm run check
+```
+
+### Testing
+```bash
+# Run tests in watch mode
+npm test
+
+# Run tests once
+npm run test:run
+
+# Open test UI
+npm run test:ui
+
+# Generate coverage report
+npm run test:coverage
 ```
 
 ### Project Structure

@@ -1,12 +1,20 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import inquirer from 'inquirer';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostSwitchService } from '../../core/HostSwitchService';
-import { HostSwitchFacade } from '../HostSwitchFacade';
+import type {
+  CreateProfileResult,
+  HostSwitchConfig,
+  IFileSystem,
+  ILogger,
+  IPermissionChecker,
+  IProcessManager,
+  ProfileInfo,
+  SwitchResult,
+} from '../../interfaces';
 import { CliController } from '../CliController';
+import { HostSwitchFacade } from '../HostSwitchFacade';
 import { CliUserInterface } from '../ui/CliUserInterface';
 import { InteractiveUserInterface } from '../ui/InteractiveUserInterface';
-import { IFileSystem, ILogger, IProcessManager, IPermissionChecker } from '../../interfaces';
-import { ProfileInfo, CreateProfileResult, SwitchResult, HostSwitchConfig } from '../../interfaces';
-import inquirer from 'inquirer';
 
 vi.mock('inquirer');
 
@@ -74,11 +82,7 @@ describe('Integration Tests', () => {
       mockPermissionChecker
     );
 
-    facade = new HostSwitchFacade(
-      hostSwitchService,
-      mockProcessManager,
-      mockPermissionChecker
-    );
+    facade = new HostSwitchFacade(hostSwitchService, mockProcessManager, mockPermissionChecker);
 
     cliUI = new CliUserInterface(mockLogger);
     interactiveUI = new InteractiveUserInterface(facade, mockLogger);
@@ -114,13 +118,18 @@ describe('Integration Tests', () => {
       vi.spyOn(hostSwitchService, 'createProfile').mockReturnValue(createResult);
       vi.spyOn(hostSwitchService, 'getProfiles').mockReturnValue(profiles);
       vi.spyOn(hostSwitchService, 'switchProfile').mockResolvedValue(switchResult);
-      vi.spyOn(hostSwitchService, 'deleteProfile').mockImplementation(() => ({ success: true, message: 'Deleted' }));
+      vi.spyOn(hostSwitchService, 'deleteProfile').mockImplementation(() => ({
+        success: true,
+        message: 'Deleted',
+      }));
       vi.spyOn(hostSwitchService, 'profileExists').mockReturnValue(true);
       vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(false);
 
       // 1. Create profile
       await controller.executeCommand('create', { name: 'test-profile', fromCurrent: false });
-      expect(mockLogger.success).toHaveBeenCalledWith('Profile \"test-profile\" created successfully');
+      expect(mockLogger.success).toHaveBeenCalledWith(
+        'Profile \"test-profile\" created successfully'
+      );
 
       // 2. List profiles
       await controller.executeCommand('list');
@@ -128,7 +137,10 @@ describe('Integration Tests', () => {
 
       // 3. Switch profile
       vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(false);
-      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ success: true, message: 'Switched to test-profile' });
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({
+        success: true,
+        message: 'Switched to test-profile',
+      });
       await controller.executeCommand('switch', { name: 'test-profile' });
       expect(facade.switchProfile).toHaveBeenCalledWith('test-profile');
 
@@ -138,37 +150,39 @@ describe('Integration Tests', () => {
     });
 
     it('should handle sudo requirement in CLI mode', async () => {
-      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ 
-        success: false, 
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({
+        success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch staging',
-        message: 'This operation requires sudo privileges.'
+        message: 'This operation requires sudo privileges.',
       });
 
       await controller.executeCommand('switch', { name: 'staging' });
 
-      expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'This operation requires sudo privileges. Rerunning with sudo...'
+      );
       expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
     });
 
     it('should handle complex sudo scenarios in interactive mode', async () => {
       // Test auto-sudo functionality in interactive mode
-      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ 
-        success: false, 
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({
+        success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch production',
-        message: 'This operation requires sudo privileges.'
+        message: 'This operation requires sudo privileges.',
       });
-      
+
       vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
         success: true,
-        message: 'Successfully switched to production with sudo'
+        message: 'Successfully switched to production with sudo',
       });
 
       // Simulate going through interactive UI
       const result = await facade.switchProfile('production');
       expect(result.requiresSudo).toBe(true);
-      
+
       // Now test the sudo execution
       const sudoResult = await facade.switchProfileWithSudo('production');
       expect(sudoResult.success).toBe(true);
@@ -176,16 +190,16 @@ describe('Integration Tests', () => {
     });
 
     it('should handle permission errors gracefully', async () => {
-      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ 
-        success: false, 
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({
+        success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch staging',
-        message: 'This operation requires sudo privileges.'
+        message: 'This operation requires sudo privileges.',
       });
 
       vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
         success: false,
-        message: 'Permission denied even with sudo'
+        message: 'Permission denied even with sudo',
       });
 
       const result = await facade.switchProfile('staging');
@@ -200,14 +214,14 @@ describe('Integration Tests', () => {
       const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
       vi.spyOn(facade, 'createProfile').mockResolvedValue({
         success: false,
-        message: 'Profile creation failed'
+        message: 'Profile creation failed',
       });
 
       await controller.executeCommand('create', { name: 'failing-profile' });
 
       expect(mockLogger.error).toHaveBeenCalledWith('Profile creation failed');
       expect(mockExit).toHaveBeenCalledWith(1);
-      
+
       mockExit.mockRestore();
     });
   });
@@ -218,9 +232,9 @@ describe('Integration Tests', () => {
         { name: 'local', isCurrent: true },
         { name: 'staging', isCurrent: false },
       ]);
-      
+
       const listResult = await facade.listProfiles();
-      
+
       expect(listResult.success).toBe(true);
       expect(listResult.data?.profiles).toHaveLength(2);
     });
@@ -236,17 +250,23 @@ describe('Integration Tests', () => {
   describe('Command parameter validation', () => {
     it('should handle missing profile name in create command', async () => {
       await controller.executeCommand('create', {});
-      expect(mockLogger.error).toHaveBeenCalledWith('Error executing command: Profile name is required for create command');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error executing command: Profile name is required for create command'
+      );
     });
 
     it('should handle missing profile name in switch command', async () => {
       await controller.executeCommand('switch', {});
-      expect(mockLogger.error).toHaveBeenCalledWith('Error executing command: Profile name is required for switch command');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error executing command: Profile name is required for switch command'
+      );
     });
 
     it('should handle unknown command type', async () => {
       await controller.executeCommand('unknown' as any, {});
-      expect(mockLogger.error).toHaveBeenCalledWith('Error executing command: Unknown command type: unknown');
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Error executing command: Unknown command type: unknown'
+      );
     });
   });
 
@@ -268,7 +288,9 @@ describe('Integration Tests', () => {
     });
 
     it('should throw errors for unsupported operations in CLI UI', async () => {
-      await expect(cliUI.promptConfirm('Are you sure?')).rejects.toThrow('not supported in CLI mode');
+      await expect(cliUI.promptConfirm('Are you sure?')).rejects.toThrow(
+        'not supported in CLI mode'
+      );
       await expect(cliUI.promptSelect('Choose:', [])).rejects.toThrow('not supported in CLI mode');
       await expect(cliUI.promptInput('Enter:')).rejects.toThrow('not supported in CLI mode');
     });

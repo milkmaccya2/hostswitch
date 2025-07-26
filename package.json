@@ -27,7 +27,12 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src",
+    "format": "biome format --write src",
+    "format:check": "biome format src",
+    "check": "npm run lint && npm run format:check && npm run test:run"
   },
   "keywords": [
     "hosts",
@@ -58,6 +63,7 @@
     "inquirer": "8.2.6"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.1.2",
     "@types/fs-extra": "^11.0.4",
     "@types/inquirer": "8.2.11",
     "@types/node": "^24.0.15",

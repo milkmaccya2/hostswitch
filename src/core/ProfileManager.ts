@@ -1,4 +1,9 @@
-import { IFileSystem, HostSwitchConfig, ProfileInfo, CreateProfileResult } from '../interfaces'
+import type {
+  CreateProfileResult,
+  HostSwitchConfig,
+  IFileSystem,
+  ProfileInfo,
+} from '../interfaces';
 
 export class ProfileManager {
   constructor(
@@ -7,114 +12,118 @@ export class ProfileManager {
   ) {}
 
   getProfiles(currentProfile: string | null): ProfileInfo[] {
-    const profiles = this.fileSystem.readdirSync(this.config.profilesDir)
-      .filter(file => file.endsWith('.hosts'))
-      .map(file => file.replace('.hosts', ''))
-    
-    return profiles.map(name => ({
+    const profiles = this.fileSystem
+      .readdirSync(this.config.profilesDir)
+      .filter((file) => file.endsWith('.hosts'))
+      .map((file) => file.replace('.hosts', ''));
+
+    return profiles.map((name) => ({
       name,
-      isCurrent: name === currentProfile
-    }))
+      isCurrent: name === currentProfile,
+    }));
   }
 
   createProfile(name: string, fromCurrent: boolean = false): CreateProfileResult {
-    const profilePath = this.getProfilePath(name)
-    
+    const profilePath = this.getProfilePath(name);
+
     if (this.fileSystem.existsSync(profilePath)) {
       return {
         success: false,
-        message: `Profile '${name}' already exists.`
-      }
+        message: `Profile '${name}' already exists.`,
+      };
     }
 
     try {
       if (fromCurrent) {
-        this.fileSystem.copySync(this.config.hostsPath, profilePath)
+        this.fileSystem.copySync(this.config.hostsPath, profilePath);
         return {
           success: true,
-          message: `Profile '${name}' created from current hosts file.`
-        }
+          message: `Profile '${name}' created from current hosts file.`,
+        };
       } else {
-        const defaultContent = this.getDefaultHostsContent()
-        this.fileSystem.writeFileSync(profilePath, defaultContent)
+        const defaultContent = this.getDefaultHostsContent();
+        this.fileSystem.writeFileSync(profilePath, defaultContent);
         return {
           success: true,
-          message: `Profile '${name}' created with default content.`
-        }
+          message: `Profile '${name}' created with default content.`,
+        };
       }
     } catch (err) {
-      const error = err as Error
+      const error = err as Error;
       return {
         success: false,
-        message: `Error creating profile: ${error.message}`
-      }
+        message: `Error creating profile: ${error.message}`,
+      };
     }
   }
 
-  deleteProfile(name: string, currentProfile: string | null): { success: boolean; message: string } {
-    const profilePath = this.getProfilePath(name)
-    
+  deleteProfile(
+    name: string,
+    currentProfile: string | null
+  ): { success: boolean; message: string } {
+    const profilePath = this.getProfilePath(name);
+
     if (!this.fileSystem.existsSync(profilePath)) {
       return {
         success: false,
-        message: `Profile '${name}' does not exist.`
-      }
+        message: `Profile '${name}' does not exist.`,
+      };
     }
 
     if (currentProfile === name) {
       return {
         success: false,
-        message: `Cannot delete the currently active profile '${name}'.`
-      }
+        message: `Cannot delete the currently active profile '${name}'.`,
+      };
     }
 
     try {
-      this.fileSystem.unlinkSync(profilePath)
+      this.fileSystem.unlinkSync(profilePath);
       return {
         success: true,
-        message: `Profile '${name}' deleted.`
-      }
+        message: `Profile '${name}' deleted.`,
+      };
     } catch (err) {
-      const error = err as Error
+      const error = err as Error;
       return {
         success: false,
-        message: `Error deleting profile: ${error.message}`
-      }
+        message: `Error deleting profile: ${error.message}`,
+      };
     }
   }
 
   getProfileContent(name: string): { success: boolean; content?: string; message?: string } {
-    const profilePath = this.getProfilePath(name)
-    
+    const profilePath = this.getProfilePath(name);
+
     if (!this.fileSystem.existsSync(profilePath)) {
       return {
         success: false,
-        message: `Profile '${name}' does not exist.`
-      }
+        message: `Profile '${name}' does not exist.`,
+      };
     }
 
     try {
-      const content = this.fileSystem.readFileSync(profilePath)
+      const content = this.fileSystem.readFileSync(profilePath);
       return {
         success: true,
-        content
-      }
+        content,
+      };
     } catch (err) {
-      const error = err as Error
+      const error = err as Error;
       return {
         success: false,
-        message: `Error reading profile: ${error.message}`
-      }
+        message: `Error reading profile: ${error.message}`,
+      };
     }
   }
 
   profileExists(name: string): boolean {
-    const profilePath = this.getProfilePath(name)
-    return this.fileSystem.existsSync(profilePath)
+    const profilePath = this.getProfilePath(name);
+    return this.fileSystem.existsSync(profilePath);
   }
 
   getProfilePath(name: string): string {
-    return `${this.config.profilesDir}/${name}.hosts`
+    return `${this.config.profilesDir}/${name}.hosts`;
   }
 
   private getDefaultHostsContent(): string {
@@ -124,6 +133,6 @@ export class ProfileManager {
 127.0.0.1       localhost
 255.255.255.255 broadcasthost
 ::1             localhost
-`
+`;
   }
 }

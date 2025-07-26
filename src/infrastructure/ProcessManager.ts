@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { IProcessManager } from '../interfaces';
+import type { IProcessManager } from '../interfaces';
 
 export class ProcessManager implements IProcessManager {
   async executeEditor(editor: string, filePath: string): Promise<void> {

@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 
-import { HostSwitchService } from './core/HostSwitchService';
-import { HostSwitchFacade } from './cli/HostSwitchFacade';
-import { CliController } from './cli/CliController';
-import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
-import { CliUserInterface } from './cli/ui/CliUserInterface';
-import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
-import { ChalkLogger } from './infrastructure/ChalkLogger';
-import { ProcessManager } from './infrastructure/ProcessManager';
-import { PermissionChecker } from './infrastructure/PermissionChecker';
-import { createConfig } from './config';
 import { Command } from 'commander';
+import { CliController } from './cli/CliController';
+import { HostSwitchFacade } from './cli/HostSwitchFacade';
+import { CliUserInterface } from './cli/ui/CliUserInterface';
+import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
+import { createConfig } from './config';
+import { HostSwitchService } from './core/HostSwitchService';
+import { ChalkLogger } from './infrastructure/ChalkLogger';
+import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
+import { PermissionChecker } from './infrastructure/PermissionChecker';
+import { ProcessManager } from './infrastructure/ProcessManager';
 
 // 依存性の組み立て
 const config = createConfig();
@@ -28,7 +28,7 @@ const facade = new HostSwitchFacade(hostSwitchService, processManager, permissio
 // コマンドライン引数の解析
 function parseCommands() {
   const program = new Command();
-  
+
   program
     .name('hostswitch')
     .description('A CLI tool for switching hosts file profiles')
@@ -117,7 +117,7 @@ function parseCommands() {
 // アプリケーション起動
 async function main() {
   const program = parseCommands();
-  
+
   // 引数が無い場合はインタラクティブモードを起動
   if (process.argv.length <= 2) {
     const ui = new InteractiveUserInterface(facade, logger);

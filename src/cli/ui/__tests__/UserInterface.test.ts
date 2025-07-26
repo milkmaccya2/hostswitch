@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { InteractiveUserInterface } from '../InteractiveUserInterface';
-import { CliUserInterface } from '../CliUserInterface';
-import { HostSwitchFacade } from '../../HostSwitchFacade';
-import { ILogger, ICommandResult } from '../../../interfaces';
 import inquirer from 'inquirer';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ICommandResult, ILogger } from '../../../interfaces';
+import type { HostSwitchFacade } from '../../HostSwitchFacade';
+import { CliUserInterface } from '../CliUserInterface';
+import { InteractiveUserInterface } from '../InteractiveUserInterface';
 
 vi.mock('inquirer');
 
@@ -69,7 +69,9 @@ describe('User Interface Classes', () => {
       });
 
       it('should throw error for promptSelect', async () => {
-        await expect(cliUI.promptSelect('Select:', [{ name: 'A', value: 'a' }])).rejects.toThrow('not supported in CLI mode');
+        await expect(cliUI.promptSelect('Select:', [{ name: 'A', value: 'a' }])).rejects.toThrow(
+          'not supported in CLI mode'
+        );
       });
 
       it('should throw error for promptInput', async () => {
@@ -113,7 +115,9 @@ describe('User Interface Classes', () => {
 
         await cliUI.handleCommandResult(result);
 
-        expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          'This operation requires sudo privileges. Rerunning with sudo...'
+        );
         expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
       });
 
@@ -125,7 +129,9 @@ describe('User Interface Classes', () => {
 
         await cliUI.handleCommandResult(result);
 
-        expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires confirmation. Add --force flag to proceed without confirmation.');
+        expect(mockLogger.warning).toHaveBeenCalledWith(
+          'This operation requires confirmation. Add --force flag to proceed without confirmation.'
+        );
       });
     });
   });
@@ -275,7 +281,7 @@ describe('User Interface Classes', () => {
         const result1: ICommandResult = {
           success: false,
           requiresSudo: true,
-          sudoCommand: 'sudo hostswitch',  // No profile name
+          sudoCommand: 'sudo hostswitch', // No profile name
         };
 
         await interactiveUI.handleCommandResult(result1);

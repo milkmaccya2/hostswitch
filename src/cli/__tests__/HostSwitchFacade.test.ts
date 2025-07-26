@@ -1,7 +1,17 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { HostSwitchService } from '../../core/HostSwitchService';
+import type {
+  CreateProfileResult,
+  DeleteResult,
+  ILogger,
+  IPermissionChecker,
+  IProcessManager,
+  ProfileContentResult,
+  ProfileInfo,
+  SudoResult,
+  SwitchResult,
+} from '../../interfaces';
 import { HostSwitchFacade } from '../HostSwitchFacade';
-import { HostSwitchService } from '../../core/HostSwitchService';
-import { ILogger, IProcessManager, IPermissionChecker, ProfileInfo, CreateProfileResult, SwitchResult, DeleteResult, ProfileContentResult, SudoResult } from '../../interfaces';
 
 describe('HostSwitchFacade', () => {
   let facade: HostSwitchFacade;
@@ -46,11 +56,7 @@ describe('HostSwitchFacade', () => {
       rerunWithSudo: vi.fn(),
     };
 
-    facade = new HostSwitchFacade(
-      mockService,
-      mockProcessManager,
-      mockPermissionChecker
-    );
+    facade = new HostSwitchFacade(mockService, mockProcessManager, mockPermissionChecker);
   });
 
   describe('listProfiles', () => {
@@ -274,7 +280,7 @@ describe('HostSwitchFacade', () => {
       const result = facade.getDeletableProfiles();
 
       expect(result).toHaveLength(2);
-      expect(result.map(p => p.name)).toEqual(['staging', 'production']);
+      expect(result.map((p) => p.name)).toEqual(['staging', 'production']);
     });
   });
 });

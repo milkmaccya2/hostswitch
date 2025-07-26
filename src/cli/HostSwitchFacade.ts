@@ -1,5 +1,10 @@
-import { HostSwitchService } from '../core/HostSwitchService';
-import { IProcessManager, IPermissionChecker, ICommandResult, ProfileInfo } from '../interfaces';
+import type { HostSwitchService } from '../core/HostSwitchService';
+import type {
+  ICommandResult,
+  IPermissionChecker,
+  IProcessManager,
+  ProfileInfo,
+} from '../interfaces';
 
 export class HostSwitchFacade {
   constructor(
@@ -124,7 +129,8 @@ export class HostSwitchFacade {
     if (!force) {
       return {
         success: false,
-        message: 'This operation requires confirmation. Add --force flag to proceed without confirmation.',
+        message:
+          'This operation requires confirmation. Add --force flag to proceed without confirmation.',
         requiresConfirmation: true,
       };
     }
@@ -183,7 +189,7 @@ export class HostSwitchFacade {
 
       const profilePath = this.hostSwitchService.getProfilePath(name);
       await this.processManager.openEditor('vi', profilePath);
-      
+
       return {
         success: true,
         message: `Profile "${name}" edited successfully`,
@@ -202,7 +208,7 @@ export class HostSwitchFacade {
 
   getDeletableProfiles(): ProfileInfo[] {
     const profiles = this.hostSwitchService.getProfiles();
-    return profiles.filter(p => !p.isCurrent);
+    return profiles.filter((p) => !p.isCurrent);
   }
 
   private validateProfileName(name: string): ICommandResult {

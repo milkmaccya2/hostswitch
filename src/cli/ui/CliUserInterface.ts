@@ -1,4 +1,10 @@
-import { IUserInterface, MessageType, Choice, ICommandResult, ILogger } from '../../interfaces';
+import type {
+  Choice,
+  ICommandResult,
+  ILogger,
+  IUserInterface,
+  MessageType,
+} from '../../interfaces';
 
 export class CliUserInterface implements IUserInterface {
   constructor(private logger: ILogger) {}
@@ -21,33 +27,46 @@ export class CliUserInterface implements IUserInterface {
   }
 
   async promptConfirm(_message: string): Promise<boolean> {
-    throw new Error('Confirmation prompts are not supported in CLI mode. Use command line arguments instead.');
+    throw new Error(
+      'Confirmation prompts are not supported in CLI mode. Use command line arguments instead.'
+    );
   }
 
   async promptSelect<T>(_message: string, _choices: Choice<T>[]): Promise<T> {
-    throw new Error('Selection prompts are not supported in CLI mode. Use command line arguments instead.');
+    throw new Error(
+      'Selection prompts are not supported in CLI mode. Use command line arguments instead.'
+    );
   }
 
-  async promptInput(_message: string, _validator?: (input: string) => boolean | string): Promise<string> {
-    throw new Error('Input prompts are not supported in CLI mode. Use command line arguments instead.');
+  async promptInput(
+    _message: string,
+    _validator?: (input: string) => boolean | string
+  ): Promise<string> {
+    throw new Error(
+      'Input prompts are not supported in CLI mode. Use command line arguments instead.'
+    );
   }
 
   async handleCommandResult(result: ICommandResult): Promise<void> {
     if (result.requiresSudo) {
       this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
-      
+
       // テスト環境では実際のsudo実行をスキップ
-      if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true' || process.env.npm_lifecycle_event?.includes('test')) {
+      if (
+        process.env.NODE_ENV === 'test' ||
+        process.env.VITEST === 'true' ||
+        process.env.npm_lifecycle_event?.includes('test')
+      ) {
         this.showMessage('(Skipped in test environment)', 'info');
         return;
       }
-      
+
       // sudoCommandが存在しない場合はエラー
       if (!result.sudoCommand) {
         this.showMessage('No sudo command provided', 'error');
         return;
       }
-      
+
       // 自動的にsudoで再実行
       try {
         const { execSync } = require('child_process');
@@ -62,7 +81,10 @@ export class CliUserInterface implements IUserInterface {
     }
 
     if (result.requiresConfirmation) {
-      this.showMessage('This operation requires confirmation. Add --force flag to proceed without confirmation.', 'warning');
+      this.showMessage(
+        'This operation requires confirmation. Add --force flag to proceed without confirmation.',
+        'warning'
+      );
       return;
     }
 
@@ -71,7 +93,7 @@ export class CliUserInterface implements IUserInterface {
       if (result.data) {
         this.displayData(result.data);
       }
-      
+
       if (result.message) {
         this.showMessage(result.message, 'success');
       }

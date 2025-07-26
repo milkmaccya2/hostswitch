@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ListProfilesCommand } from '../ListProfilesCommand';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ICommandResult } from '../../../interfaces';
+import type { HostSwitchFacade } from '../../HostSwitchFacade';
 import { CreateProfileCommand } from '../CreateProfileCommand';
-import { SwitchProfileCommand } from '../SwitchProfileCommand';
-import { EditProfileCommand } from '../EditProfileCommand';
-import { ShowProfileCommand } from '../ShowProfileCommand';
 import { DeleteProfileCommand } from '../DeleteProfileCommand';
-import { HostSwitchFacade } from '../../HostSwitchFacade';
-import { ICommandResult } from '../../../interfaces';
+import { EditProfileCommand } from '../EditProfileCommand';
+import { ListProfilesCommand } from '../ListProfilesCommand';
+import { ShowProfileCommand } from '../ShowProfileCommand';
+import { SwitchProfileCommand } from '../SwitchProfileCommand';
 
 describe('Command Classes', () => {
   let mockFacade: HostSwitchFacade;

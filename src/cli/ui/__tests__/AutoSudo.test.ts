@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ICommandResult, ILogger } from '../../../interfaces';
+import type { HostSwitchFacade } from '../../HostSwitchFacade';
 import { CliUserInterface } from '../CliUserInterface';
 import { InteractiveUserInterface } from '../InteractiveUserInterface';
-import { HostSwitchFacade } from '../../HostSwitchFacade';
-import { ILogger, ICommandResult } from '../../../interfaces';
 
 describe('Auto-Sudo Functionality', () => {
   let mockLogger: ILogger;
@@ -43,7 +43,9 @@ describe('Auto-Sudo Functionality', () => {
 
       await cliUI.handleCommandResult(result);
 
-      expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'This operation requires sudo privileges. Rerunning with sudo...'
+      );
       expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
     });
 
@@ -62,7 +64,9 @@ describe('Auto-Sudo Functionality', () => {
 
       await cliUI.handleCommandResult(result);
 
-      expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'This operation requires sudo privileges. Rerunning with sudo...'
+      );
       expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
       expect(mockExecSync).not.toHaveBeenCalled();
       expect(mockExit).not.toHaveBeenCalled();
@@ -160,9 +164,7 @@ describe('Auto-Sudo Functionality', () => {
     });
 
     it('should handle switchProfileWithSudo rejection', async () => {
-      vi.mocked(mockFacade.switchProfileWithSudo).mockRejectedValue(
-        new Error('Network error')
-      );
+      vi.mocked(mockFacade.switchProfileWithSudo).mockRejectedValue(new Error('Network error'));
 
       const result: ICommandResult = {
         success: false,
@@ -174,8 +176,12 @@ describe('Auto-Sudo Functionality', () => {
       await interactiveUI.handleCommandResult(result);
 
       expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-      expect(mockLogger.info).toHaveBeenCalledWith('Switching to profile "production" with sudo...');
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to execute sudo command: Network error');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Switching to profile "production" with sudo...'
+      );
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to execute sudo command: Network error'
+      );
     });
   });
 
@@ -190,7 +196,9 @@ describe('Auto-Sudo Functionality', () => {
       await cliUI.handleCommandResult(result);
       await interactiveUI.handleCommandResult(result);
 
-      expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'This operation requires sudo privileges. Rerunning with sudo...'
+      );
       expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
       expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
     });

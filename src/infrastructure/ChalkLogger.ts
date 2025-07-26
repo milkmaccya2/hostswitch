@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { ILogger } from '../interfaces';
+import type { ILogger } from '../interfaces';
 
 export class ChalkLogger implements ILogger {
   info(message: string): void {

@@ -71,8 +71,30 @@ npm run test:ui        # Open test UI
 npm run test:coverage  # Generate coverage report
 ```
 
-### Linting
-No linting configuration exists. Consider adding ESLint if implementing code style checks.
+### Code Quality and Formatting
+The project uses **Biome** - a modern, unified linter and formatter.
+
+**Commands:**
+```bash
+npm run lint          # Check for linting errors
+npm run lint:fix      # Auto-fix linting and formatting issues
+npm run format        # Format code only
+npm run format:check  # Check formatting without fixing
+npm run check         # Run linting + formatting + tests (CI)
+```
+
+**Configuration:**
+- Main config: `biome.json`
+- IDE integration: `.vscode/settings.json` (auto-format on save)
+- Recommended extension: `biomejs.biome`
+
+**Code Style Rules:**
+- **Indentation**: 2 spaces
+- **Quotes**: Single quotes for TypeScript/JavaScript
+- **Semicolons**: Always required
+- **Line width**: 100 characters
+- **Import organization**: Alphabetical, with type imports
+- **Node.js protocol**: Required for built-in modules (`node:fs`)
 
 ## Architecture
 
@@ -211,9 +233,16 @@ Build commands:
 
 ### Task Completion Review
 When completing development tasks, always review the following:
-1. Run comprehensive tests: `npm run test:run`
-2. Check test coverage: `npm run test:coverage`
-3. Verify type checking: `npm run build`
-4. Test CLI functionality manually
-5. Update documentation if needed
-6. Review architecture consistency with clean patterns
+1. **Code quality**: `npm run lint:fix` (auto-fix linting and formatting)
+2. **Comprehensive tests**: `npm run test:run`
+3. **Test coverage**: `npm run test:coverage`
+4. **Type checking**: `npm run build`
+5. **Full quality check**: `npm run check` (combines linting, formatting, and tests)
+6. **Manual CLI testing**: Test core functionality manually
+7. **Documentation updates**: Update relevant documentation files
+8. **Architecture consistency**: Review adherence to clean patterns
+
+**Recommended pre-commit workflow:**
+```bash
+npm run check  # Ensures all quality gates pass
+```

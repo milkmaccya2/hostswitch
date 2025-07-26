@@ -1,6 +1,12 @@
 import inquirer from 'inquirer';
-import { IUserInterface, MessageType, Choice, ICommandResult, ILogger } from '../../interfaces';
-import { HostSwitchFacade } from '../HostSwitchFacade';
+import type {
+  Choice,
+  ICommandResult,
+  ILogger,
+  IUserInterface,
+  MessageType,
+} from '../../interfaces';
+import type { HostSwitchFacade } from '../HostSwitchFacade';
 
 export class InteractiveUserInterface implements IUserInterface {
   constructor(
@@ -49,7 +55,10 @@ export class InteractiveUserInterface implements IUserInterface {
     return answer.selected;
   }
 
-  async promptInput(message: string, validator?: (input: string) => boolean | string): Promise<string> {
+  async promptInput(
+    message: string,
+    validator?: (input: string) => boolean | string
+  ): Promise<string> {
     const answer = await inquirer.prompt([
       {
         type: 'input',
@@ -88,7 +97,7 @@ export class InteractiveUserInterface implements IUserInterface {
     while (true) {
       try {
         const action = await this.showMainMenu();
-        
+
         if (action === 'exit') {
           this.showMessage('Goodbye!', 'info');
           break;
@@ -99,7 +108,10 @@ export class InteractiveUserInterface implements IUserInterface {
           break;
         }
       } catch (error) {
-        this.showMessage(`Error: ${error instanceof Error ? error.message : String(error)}`, 'error');
+        this.showMessage(
+          `Error: ${error instanceof Error ? error.message : String(error)}`,
+          'error'
+        );
       }
     }
   }
@@ -148,7 +160,7 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleListProfiles(): Promise<void> {
     const result = await this.facade.listProfiles();
-    
+
     if (result.success && result.data?.profiles) {
       const profiles = result.data.profiles;
       if (profiles.length === 0) {
@@ -167,7 +179,11 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleSwitchProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (!listResult.success || !listResult.data?.profiles || listResult.data.profiles.length === 0) {
+    if (
+      !listResult.success ||
+      !listResult.data?.profiles ||
+      listResult.data.profiles.length === 0
+    ) {
       this.showMessage('No profiles available to switch to', 'warning');
       return;
     }
@@ -204,7 +220,11 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleEditProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (!listResult.success || !listResult.data?.profiles || listResult.data.profiles.length === 0) {
+    if (
+      !listResult.success ||
+      !listResult.data?.profiles ||
+      listResult.data.profiles.length === 0
+    ) {
       this.showMessage('No profiles available to edit', 'warning');
       return;
     }
@@ -221,7 +241,11 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleShowProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (!listResult.success || !listResult.data?.profiles || listResult.data.profiles.length === 0) {
+    if (
+      !listResult.success ||
+      !listResult.data?.profiles ||
+      listResult.data.profiles.length === 0
+    ) {
       this.showMessage('No profiles available to show', 'warning');
       return;
     }
@@ -233,7 +257,7 @@ export class InteractiveUserInterface implements IUserInterface {
 
     const profileName = await this.promptSelect('Select profile to show:', choices);
     const result = await this.facade.showProfile(profileName);
-    
+
     if (result.success && result.data?.content) {
       this.showMessage(`\nContent of profile "${profileName}":`, 'info');
       this.showMessage(result.data.content, 'info');
@@ -249,14 +273,14 @@ export class InteractiveUserInterface implements IUserInterface {
       return;
     }
 
-    const choices: Choice<string>[] = deletableProfiles.map(p => ({
+    const choices: Choice<string>[] = deletableProfiles.map((p) => ({
       name: p.name,
       value: p.name,
     }));
 
     const profileName = await this.promptSelect('Select profile to delete:', choices);
     const confirmed = await this.promptConfirm(`Are you sure you want to delete "${profileName}"?`);
-    
+
     if (confirmed) {
       const result = await this.facade.deleteProfile(profileName);
       if (result.success) {
@@ -271,7 +295,7 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges.', 'warning');
-    
+
     if (result.sudoCommand && result.sudoCommand.includes('switch')) {
       // sudo hostswitch switch profile-name の形式から profile-name を抽出
       const parts = result.sudoCommand.split(' ');
@@ -283,7 +307,10 @@ export class InteractiveUserInterface implements IUserInterface {
           const sudoResult = await this.facade.switchProfileWithSudo(profileName);
           await this.handleCommandResult(sudoResult);
         } catch (error) {
-          this.showMessage(`Failed to execute sudo command: ${error instanceof Error ? error.message : String(error)}`, 'error');
+          this.showMessage(
+            `Failed to execute sudo command: ${error instanceof Error ? error.message : String(error)}`,
+            'error'
+          );
         }
       }
     }
