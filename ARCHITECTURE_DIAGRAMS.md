@@ -1,120 +1,6 @@
 # HostSwitch アーキテクチャ図
 
-## 現在のアーキテクチャ
-
-```mermaid
-graph TB
-    subgraph "Entry Point"
-        A[hostswitch.ts]
-    end
-    
-    subgraph "CLI Layer"
-        B[CliApplication]
-        C[CommandHandler]
-        D[InteractiveMode]
-    end
-    
-    subgraph "Core Layer"
-        E[HostSwitchService]
-        F[ProfileManager]
-        G[CurrentProfileManager]
-        H[BackupManager]
-    end
-    
-    subgraph "Infrastructure Layer"
-        I[FileSystemAdapter]
-        J[ChalkLogger]
-        K[ProcessManager]
-        L[PermissionChecker]
-    end
-    
-    subgraph "External Dependencies"
-        M[commander.js]
-        N[inquirer.js]
-        O[fs-extra]
-        P[chalk]
-    end
-    
-    %% Entry Point connections
-    A --> B
-    A --> C
-    A --> D
-    
-    %% CLI Layer connections
-    B --> M
-    B --> C
-    B --> D
-    C --> E
-    C --> J
-    C --> K
-    D --> E
-    D --> J
-    D --> K
-    D --> L
-    D --> N
-    
-    %% Core Layer connections
-    E --> F
-    E --> G
-    E --> H
-    E --> I
-    E --> J
-    E --> L
-    
-    F --> I
-    G --> I
-    H --> I
-    
-    %% Infrastructure connections
-    I --> O
-    J --> P
-    
-    style A fill:#f9f,stroke:#333,stroke-width:4px
-    style E fill:#bbf,stroke:#333,stroke-width:2px
-```
-
-## 問題点の可視化
-
-```mermaid
-graph TB
-    subgraph "問題1: 重複した処理"
-        CH[CommandHandler]
-        IM[InteractiveMode]
-        HSS1[HostSwitchService]
-        
-        CH -->|同じような処理| HSS1
-        IM -->|同じような処理| HSS1
-    end
-    
-    subgraph "問題2: 複雑な依存関係"
-        IM2[InteractiveMode]
-        D1[HostSwitchService]
-        D2[ILogger]
-        D3[IProcessManager]
-        D4[IPermissionChecker]
-        
-        IM2 --> D1
-        IM2 --> D2
-        IM2 --> D3
-        IM2 --> D4
-    end
-    
-    subgraph "問題3: UIとビジネスロジックの混在"
-        UI[UI処理<br/>inquirer.prompt]
-        BL[ビジネスロジック<br/>権限チェック、切り替え処理]
-        IM3[InteractiveMode内で混在]
-        
-        UI -.->|混在| IM3
-        BL -.->|混在| IM3
-    end
-    
-    style CH fill:#faa,stroke:#333,stroke-width:2px
-    style IM fill:#faa,stroke:#333,stroke-width:2px
-    style IM2 fill:#faa,stroke:#333,stroke-width:2px
-    style IM3 fill:#faa,stroke:#333,stroke-width:2px
-```
-
-## 改善案のアーキテクチャ
+## 現在のアーキテクチャ（実装済み）
 
 ```mermaid
 graph TB
@@ -218,6 +104,31 @@ graph TB
     style E fill:#ffa,stroke:#333,stroke-width:2px
     style F fill:#ffa,stroke:#333,stroke-width:2px
 ```
+
+## アーキテクチャの利点
+
+### 1. 単一責任の原則（SRP）
+- **CliController**: コマンドのディスパッチのみ担当
+- **Command Classes**: 各コマンドの実行ロジックのみ担当
+- **HostSwitchFacade**: ビジネス操作の統一インターフェースのみ提供
+- **UI Classes**: ユーザーインタラクションのみ担当
+
+### 2. 開放/閉鎖の原則（OCP）
+- 新しいコマンドの追加が既存コードを変更せずに可能
+- ICommandインターフェースを実装するだけで新機能追加可能
+
+### 3. 依存性逆転の原則（DIP）
+- 上位モジュールは下位モジュールに依存せず、抽象に依存
+- IUserInterface、ICommand等のインターフェースを通じた疎結合
+
+### 4. インターフェース分離の原則（ISP）
+- 小さく特化したインターフェース（ICommand、IUserInterface）
+- クライアントは必要なメソッドのみに依存
+
+### 5. テスタビリティの向上
+- 各コンポーネントが独立してテスト可能
+- モックを使用した単体テストが容易
+- 依存性注入によるテストの柔軟性
 
 ## データフロー図
 
@@ -381,53 +292,36 @@ classDiagram
     HostSwitchFacade --> IPermissionChecker
 ```
 
-## 実装順序と依存関係
+## 実装状況
 
-```mermaid
-graph LR
-    subgraph "Phase 1: 基盤"
-        A1[ICommandResult<br/>インターフェース定義]
-        A2[HostSwitchFacade<br/>実装]
-        A3[Facadeテスト]
-    end
-    
-    subgraph "Phase 2: Command Pattern"
-        B1[ICommand<br/>インターフェース定義]
-        B2[各Commandクラス<br/>実装]
-        B3[Commandテスト]
-    end
-    
-    subgraph "Phase 3: UI抽象化"
-        C1[IUserInterface<br/>インターフェース定義]
-        C2[InteractiveUserInterface<br/>実装]
-        C3[CliUserInterface<br/>実装]
-        C4[UIテスト]
-    end
-    
-    subgraph "Phase 4: 統合"
-        D1[CliController<br/>実装]
-        D2[hostswitch.ts<br/>更新]
-        D3[統合テスト]
-    end
-    
-    subgraph "Phase 5: クリーンアップ"
-        E1[旧InteractiveMode<br/>削除]
-        E2[旧CommandHandler<br/>更新/削除]
-        E3[ドキュメント更新]
-    end
-    
-    A1 --> A2 --> A3
-    A3 --> B1 --> B2 --> B3
-    B3 --> C1 --> C2
-    C1 --> C3
-    C2 --> C4
-    C3 --> C4
-    C4 --> D1 --> D2 --> D3
-    D3 --> E1 --> E2 --> E3
-    
-    style A1 fill:#aaf,stroke:#333,stroke-width:2px
-    style A2 fill:#aaf,stroke:#333,stroke-width:2px
-    style B1 fill:#afa,stroke:#333,stroke-width:2px
-    style C1 fill:#faa,stroke:#333,stroke-width:2px
-    style D1 fill:#ffa,stroke:#333,stroke-width:2px
-```
+### ✅ 完了したフェーズ
+
+1. **Phase 1: 基盤**
+   - ICommandResultインターフェース定義 ✅
+   - HostSwitchFacade実装 ✅
+   - Facadeテスト ✅
+
+2. **Phase 2: Command Pattern**
+   - ICommandインターフェース定義 ✅
+   - 各Commandクラス実装 ✅
+   - Commandテスト ✅
+
+3. **Phase 3: UI抽象化**
+   - IUserInterfaceインターフェース定義 ✅
+   - InteractiveUserInterface実装 ✅
+   - CliUserInterface実装 ✅
+   - UIテスト ✅
+
+4. **Phase 4: 統合**
+   - CliController実装 ✅
+   - hostswitch.ts更新 ✅
+   - 統合テスト ✅
+
+5. **Phase 5: クリーンアップ**
+   - 旧InteractiveMode削除 ✅
+   - 旧CommandHandler削除 ✅
+   - ドキュメント更新 ✅
+
+### 🎉 アーキテクチャリファクタリング完了
+
+すべてのフェーズが正常に完了し、クリーンアーキテクチャへの移行が成功しました。

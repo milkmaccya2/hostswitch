@@ -202,3 +202,7 @@ Build commands:
 - `npm run build:watch`: Watch mode for development
 - `npm run clean`: Clean build directory
 - `npm run dev`: Run TypeScript directly without building
+
+## Workflow Reminders
+
+- タスクが終わるごとに@ARCHITECTURE_DIAGRAMS.md を更新する
