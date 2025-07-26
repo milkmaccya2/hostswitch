@@ -268,8 +268,8 @@ hostswitch switch dev  # Permission denied
 # Check profile list
 hostswitch list
 
-# Check for typos
-hostswitch show <tab>  # if bash completion is available
+# Check for typos in profile names
+hostswitch show [profile-name]
 ```
 
 ### Windows Usage

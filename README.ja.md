@@ -291,7 +291,7 @@ hostswitch switch dev  # Permission denied
 hostswitch list
 
 # プロファイル名のタイポを確認
-hostswitch show <tab>  # bash補完が使える場合
+hostswitch show [プロファイル名]
 ```
 
 ### Windowsでの使用
