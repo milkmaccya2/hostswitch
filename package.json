@@ -1,6 +1,6 @@
 {
   "name": "@milkmaccya2/hostswitch",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A simple CLI tool to manage and switch between multiple hosts file profiles for different development environments",
   "main": "dist/hostswitch.js",
   "bin": {
