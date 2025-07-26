@@ -12,4 +12,8 @@ export class ProcessManager implements IProcessManager {
       }
     });
   }
+
+  async openEditor(editor: string, filePath: string): Promise<void> {
+    return this.executeEditor(editor, filePath);
+  }
 }

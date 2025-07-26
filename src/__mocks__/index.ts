@@ -142,6 +142,10 @@ export class MockLogger implements ILogger {
     this.messages.push({ level: 'warn', message })
   }
 
+  warning(message: string): void {
+    this.messages.push({ level: 'warning', message })
+  }
+
   error(message: string): void {
     this.messages.push({ level: 'error', message })
   }
@@ -189,6 +193,10 @@ export class MockProcessManager implements IProcessManager {
     }
   }
 
+  async openEditor(editor: string, filePath: string): Promise<void> {
+    return this.executeEditor(editor, filePath)
+  }
+
   clear(): void {
     this.calls = []
     this.shouldThrow = false
@@ -218,9 +226,14 @@ export class MockPermissionChecker implements IPermissionChecker {
     return this.canWriteToFileResult
   }
 
-  async requiresSudo(filePath: string): Promise<boolean> {
+  requiresSudo(filePath?: string): boolean {
     this.recordCall('requiresSudo', filePath)
     return this.requiresSudoResult
+  }
+
+  async checkPermissions(path: string): Promise<boolean> {
+    this.recordCall('checkPermissions', path)
+    return this.canWriteToFileResult
   }
 
   isRunningAsSudo(): boolean {

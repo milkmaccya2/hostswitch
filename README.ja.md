@@ -25,6 +25,7 @@ HostSwitchは、開発環境やテスト環境で異なるhosts設定を簡単�
 - 🎨 **カラフルな出力** - 状態が一目でわかる
 - ⚡ **シンプルなCLI** - 覚えやすいコマンド
 - 🔒 **安全な操作** - sudo権限が必要な操作を明示
+- 🎯 **対話形式モード** - 引数なしで実行すると使いやすいプロンプト表示
 
 ## 要件
 
@@ -60,6 +61,21 @@ npm link
 ```
 
 ## 使い方
+
+### 対話形式モード
+```bash
+# 引数なしで実行すると対話形式モードで起動
+hostswitch
+
+# 矢印キーで操作、Enterで選択
+? What would you like to do? (Use arrow keys)
+❯ Switch profile (current: local)
+  List all profiles  
+  Create new profile
+  Edit profile
+  Delete profile
+  Exit
+```
 
 ### プロファイル一覧を表示
 ```bash
@@ -184,13 +200,35 @@ hostswitch/
 ### アーキテクチャ
 
 アプリケーションはクリーンアーキテクチャパターンに従います：
-- **ドメイン層**: `HostSwitchService`の純粋なビジネスロジック
-- **CLI層**: コマンド処理とユーザーインタラクション
-- **インフラ層**: ファイルシステム、ログ出力、プロセス実行
-- **依存性注入**: 全ての依存関係はインターフェース経由で注入
+
+#### **ドメイン層** (`core/`)
+- **HostSwitchService**: ビジネス操作のコーディネーター
+- **ProfileManager**: プロファイルCRUD操作
+- **CurrentProfileManager**: 現在の状態管理
+- **BackupManager**: バックアップ機能
+
+#### **CLI層** (`cli/`)
+- **HostSwitchFacade**: すべてのビジネス操作への統一インターフェース
+- **CliController**: Command Patternを使用してCLIコマンドをファサード操作にマッピング
+- **InteractiveUserInterface**: inquirer.jsを使用したユーザーフレンドリーなプロンプトの対話モード
+- **CliUserInterface**: 非対話操作用のコマンドラインインターフェース
+- **Command Classes**: Command Patternに従った個別コマンド実装
+  - ListProfilesCommand、CreateProfileCommand、SwitchProfileCommand
+  - EditProfileCommand、ShowProfileCommand、DeleteProfileCommand
+
+#### **インフラ層** (`infrastructure/`)
+- **FileSystemAdapter**: ファイルシステム操作実装
+- **ChalkLogger**: カラー表示とフォーマット付きコンソール出力
+- **ProcessManager**: 外部プロセス実行（エディター）
+
+#### **依存性注入**
+アプリケーションは全ての依存関係でコンストラクタ注入を使用：
+- サービスは具象実装ではなくインターフェースを受け取る
+- 単体テストでのモック化が容易
+- `hostswitch.ts`での明確な依存関係グラフ
 
 この設計により以下が可能になります：
-- モックされた依存関係での簡単な単体テスト
+- モックされた依存関係での包括的な単体テスト
 - 関心の明確な分離
 - プラットフォーム非依存のコアロジック
 - 将来の拡張性（GUIやAPIインターフェースなど）

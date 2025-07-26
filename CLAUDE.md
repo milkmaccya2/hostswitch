@@ -109,8 +109,13 @@ src/
   - Error resilience and fallback handling
 
 #### **CLI Layer** (`cli/`)
-- **CommandHandler**: Maps CLI commands to service operations
-- **CliApplication**: Commander.js setup and command routing
+- **HostSwitchFacade**: Simplified interface for all business operations
+- **CliController**: Maps CLI commands to facade operations using Command Pattern
+- **InteractiveUserInterface**: Interactive mode using inquirer.js for user-friendly prompts
+- **CliUserInterface**: Command-line interface for non-interactive operations
+- **Command Classes**: Individual command implementations following Command Pattern
+  - ListProfilesCommand, CreateProfileCommand, SwitchProfileCommand
+  - EditProfileCommand, ShowProfileCommand, DeleteProfileCommand
 - Handles user interaction and error reporting
 
 #### **Infrastructure Layer** (`infrastructure/`)
@@ -159,6 +164,15 @@ All commands are defined using Commander.js:
 - `delete <name>` / `rm <name>`: Remove profile
 - `show <name>` / `cat <name>`: Display profile contents
 - `edit <name>`: Open profile in editor (uses $EDITOR or vi)
+
+### Interactive Mode
+Running `hostswitch` without any arguments launches an interactive mode:
+- User-friendly menu navigation using arrow keys
+- All major operations available through prompts
+- Visual indicators for current profile
+- Automatic sudo detection with helpful instructions
+- Confirmation prompts for destructive operations
+- Implemented using InteractiveUserInterface with inquirer.js
 
 ## Important Implementation Details
 

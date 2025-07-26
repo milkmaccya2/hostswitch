@@ -10,6 +10,10 @@ export class ChalkLogger implements ILogger {
     console.log(chalk.yellow(message));
   }
 
+  warning(message: string): void {
+    console.log(chalk.yellow(message));
+  }
+
   error(message: string): void {
     console.error(chalk.red(`Error: ${message}`));
   }

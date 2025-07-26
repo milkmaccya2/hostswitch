@@ -28,15 +28,19 @@ export class PermissionChecker implements IPermissionChecker {
     }
   }
 
-  async requiresSudo(filePath: string): Promise<boolean> {
+  requiresSudo(_filePath?: string): boolean {
     // sudoで実行中の場合は不要
     if (this.isRunningAsSudo()) {
       return false;
     }
 
+    // デフォルトでhostsファイルへの書き込みはsudoが必要
+    return true;
+  }
+
+  async checkPermissions(path: string): Promise<boolean> {
     // ファイルへの書き込み権限をチェック
-    const canWrite = await this.canWriteToFile(filePath);
-    return !canWrite;
+    return await this.canWriteToFile(path);
   }
 
   isRunningAsSudo(): boolean {

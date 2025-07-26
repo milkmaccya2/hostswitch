@@ -25,6 +25,7 @@ HostSwitch is a CLI tool that makes it easy to switch between different hosts co
 - 🎨 **Colorful output** - Clear status visibility
 - ⚡ **Simple CLI** - Easy-to-remember commands
 - 🔒 **Safe operations** - Explicit sudo requirements
+- 🎯 **Interactive mode** - User-friendly prompts when run without arguments
 
 ## Requirements
 
@@ -60,6 +61,21 @@ npm link
 ```
 
 ## Usage
+
+### Interactive Mode
+```bash
+# Run without arguments for interactive mode
+hostswitch
+
+# Navigate with arrow keys, select options with Enter
+? What would you like to do? (Use arrow keys)
+❯ Switch profile (current: local)
+  List all profiles  
+  Create new profile
+  Edit profile
+  Delete profile
+  Exit
+```
 
 ### List profiles
 ```bash
