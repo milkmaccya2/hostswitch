@@ -206,3 +206,14 @@ Build commands:
 ## Workflow Reminders
 
 - タスクが終わるごとに@ARCHITECTURE_DIAGRAMS.md を更新する
+
+## Development Workflow
+
+### Task Completion Review
+When completing development tasks, always review the following:
+1. Run comprehensive tests: `npm run test:run`
+2. Check test coverage: `npm run test:coverage`
+3. Verify type checking: `npm run build`
+4. Test CLI functionality manually
+5. Update documentation if needed
+6. Review architecture consistency with clean patterns

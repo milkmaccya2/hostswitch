@@ -93,11 +93,12 @@ hostswitch create development
 hostswitch create production --from-current
 ```
 
-### プロファイルを切り替え（要sudo）
+### プロファイルを切り替え（自動sudo）
 ```bash
-sudo hostswitch switch development
+# sudo を手動で入力する必要なし - 必要に応じて自動的にsudoで再実行される
+hostswitch switch development
 # または
-sudo hostswitch use development
+hostswitch use development
 ```
 
 ### プロファイルの内容を表示

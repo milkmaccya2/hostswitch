@@ -93,11 +93,12 @@ hostswitch create development
 hostswitch create production --from-current
 ```
 
-### Switch profile (requires sudo)
+### Switch profile (auto-sudo)
 ```bash
-sudo hostswitch switch development
+# No need to type sudo manually - it will automatically rerun with sudo if needed
+hostswitch switch development
 # or
-sudo hostswitch use development
+hostswitch use development
 ```
 
 ### Show profile contents

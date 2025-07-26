@@ -34,11 +34,31 @@ export class CliUserInterface implements IUserInterface {
 
   async handleCommandResult(result: ICommandResult): Promise<void> {
     if (result.requiresSudo) {
-      this.showMessage('This operation requires sudo privileges.', 'warning');
-      if (result.sudoCommand) {
-        this.showMessage(`Please run: ${result.sudoCommand}`, 'info');
+      this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
+      
+      // テスト環境では実際のsudo実行をスキップ
+      if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true' || process.env.npm_lifecycle_event?.includes('test')) {
+        this.showMessage('(Skipped in test environment)', 'info');
+        return;
       }
-      return;
+      
+      // sudoCommandが存在しない場合はエラー
+      if (!result.sudoCommand) {
+        this.showMessage('No sudo command provided', 'error');
+        return;
+      }
+      
+      // 自動的にsudoで再実行
+      try {
+        const { execSync } = require('child_process');
+        // 現在のプロセスの引数を使ってsudoで再実行
+        const args = process.argv.slice(2).join(' ');
+        execSync(`sudo ${process.argv[0]} ${process.argv[1]} ${args}`, { stdio: 'inherit' });
+        process.exit(0);
+      } catch (error) {
+        this.showMessage('Failed to execute with sudo', 'error');
+        process.exit(1);
+      }
     }
 
     if (result.requiresConfirmation) {

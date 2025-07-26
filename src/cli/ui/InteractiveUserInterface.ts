@@ -266,20 +266,20 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges.', 'warning');
-    this.showMessage('Please run the following command:', 'info');
     
-    this.showMessage(result.sudoCommand || 'sudo hostswitch', 'info');
-
-    const runNow = await this.promptConfirm('Would you like to run this command now?');
-    
-    if (runNow && result.sudoCommand && result.sudoCommand.includes('switch')) {
+    if (result.sudoCommand && result.sudoCommand.includes('switch')) {
       // sudo hostswitch switch profile-name の形式から profile-name を抽出
       const parts = result.sudoCommand.split(' ');
       const switchIndex = parts.indexOf('switch');
       if (switchIndex >= 0 && switchIndex + 1 < parts.length) {
         const profileName = parts[switchIndex + 1];
-        const sudoResult = await this.facade.switchProfileWithSudo(profileName);
-        await this.handleCommandResult(sudoResult);
+        this.showMessage(`Switching to profile "${profileName}" with sudo...`, 'info');
+        try {
+          const sudoResult = await this.facade.switchProfileWithSudo(profileName);
+          await this.handleCommandResult(sudoResult);
+        } catch (error) {
+          this.showMessage(`Failed to execute sudo command: ${error instanceof Error ? error.message : String(error)}`, 'error');
+        }
       }
     }
   }

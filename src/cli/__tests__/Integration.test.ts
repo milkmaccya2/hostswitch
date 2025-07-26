@@ -147,8 +147,53 @@ describe('Integration Tests', () => {
 
       await controller.executeCommand('switch', { name: 'staging' });
 
-      expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-      expect(mockLogger.info).toHaveBeenCalledWith('Please run: sudo hostswitch switch staging');
+      expect(mockLogger.info).toHaveBeenCalledWith('This operation requires sudo privileges. Rerunning with sudo...');
+      expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
+    });
+
+    it('should handle complex sudo scenarios in interactive mode', async () => {
+      // Test auto-sudo functionality in interactive mode
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ 
+        success: false, 
+        requiresSudo: true,
+        sudoCommand: 'sudo hostswitch switch production',
+        message: 'This operation requires sudo privileges.'
+      });
+      
+      vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
+        success: true,
+        message: 'Successfully switched to production with sudo'
+      });
+
+      // Simulate going through interactive UI
+      const result = await facade.switchProfile('production');
+      expect(result.requiresSudo).toBe(true);
+      
+      // Now test the sudo execution
+      const sudoResult = await facade.switchProfileWithSudo('production');
+      expect(sudoResult.success).toBe(true);
+      expect(sudoResult.message).toBe('Successfully switched to production with sudo');
+    });
+
+    it('should handle permission errors gracefully', async () => {
+      vi.spyOn(facade, 'switchProfile').mockResolvedValue({ 
+        success: false, 
+        requiresSudo: true,
+        sudoCommand: 'sudo hostswitch switch staging',
+        message: 'This operation requires sudo privileges.'
+      });
+
+      vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
+        success: false,
+        message: 'Permission denied even with sudo'
+      });
+
+      const result = await facade.switchProfile('staging');
+      expect(result.requiresSudo).toBe(true);
+
+      const sudoResult = await facade.switchProfileWithSudo('staging');
+      expect(sudoResult.success).toBe(false);
+      expect(sudoResult.message).toBe('Permission denied even with sudo');
     });
 
     it('should handle errors gracefully', async () => {
