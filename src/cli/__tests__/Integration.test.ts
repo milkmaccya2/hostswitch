@@ -132,8 +132,8 @@ describe('Integration Tests', () => {
       await controller.executeCommand('switch', { name: 'test-profile' });
       expect(facade.switchProfile).toHaveBeenCalledWith('test-profile');
 
-      // 4. Delete profile
-      await controller.executeCommand('delete', { name: 'test-profile' });
+      // 4. Delete profile with force flag
+      await controller.executeCommand('delete', { name: 'test-profile', force: true });
       expect(hostSwitchService.deleteProfile).toHaveBeenCalledWith('test-profile');
     });
 

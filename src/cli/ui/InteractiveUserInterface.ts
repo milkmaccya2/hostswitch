@@ -94,7 +94,10 @@ export class InteractiveUserInterface implements IUserInterface {
           break;
         }
 
-        await this.executeAction(action);
+        const shouldExit = await this.executeAction(action);
+        if (shouldExit) {
+          break;
+        }
       } catch (error) {
         this.showMessage(`Error: ${error instanceof Error ? error.message : String(error)}`, 'error');
       }
@@ -118,26 +121,28 @@ export class InteractiveUserInterface implements IUserInterface {
     return this.promptSelect('What would you like to do?', choices);
   }
 
-  private async executeAction(action: string): Promise<void> {
+  private async executeAction(action: string): Promise<boolean> {
     switch (action) {
       case 'list':
         await this.handleListProfiles();
-        break;
+        return false; // Continue interactive mode
       case 'switch':
         await this.handleSwitchProfile();
-        break;
+        return true; // Exit after action
       case 'create':
         await this.handleCreateProfile();
-        break;
+        return true; // Exit after action
       case 'edit':
         await this.handleEditProfile();
-        break;
+        return true; // Exit after action
       case 'show':
         await this.handleShowProfile();
-        break;
+        return true; // Exit after action
       case 'delete':
         await this.handleDeleteProfile();
-        break;
+        return true; // Exit after action
+      default:
+        return false;
     }
   }
 

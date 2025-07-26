@@ -115,10 +115,18 @@ export class HostSwitchFacade {
     }
   }
 
-  async deleteProfile(name: string): Promise<ICommandResult> {
+  async deleteProfile(name: string, force: boolean = false): Promise<ICommandResult> {
     const validation = this.validateProfileName(name);
     if (!validation.success) {
       return validation;
+    }
+
+    if (!force) {
+      return {
+        success: false,
+        message: 'This operation requires confirmation. Add --force flag to proceed without confirmation.',
+        requiresConfirmation: true,
+      };
     }
 
     try {
@@ -127,7 +135,6 @@ export class HostSwitchFacade {
         return {
           success: true,
           message: `Profile "${name}" deleted successfully`,
-          requiresConfirmation: true,
         };
       } else {
         return {

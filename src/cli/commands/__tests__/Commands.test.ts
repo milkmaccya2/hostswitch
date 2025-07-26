@@ -110,7 +110,7 @@ describe('Command Classes', () => {
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
-      expect(mockFacade.deleteProfile).toHaveBeenCalledWith('old-profile');
+      expect(mockFacade.deleteProfile).toHaveBeenCalledWith('old-profile', false);
     });
   });
 });

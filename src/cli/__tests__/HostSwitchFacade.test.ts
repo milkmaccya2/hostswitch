@@ -193,7 +193,7 @@ describe('HostSwitchFacade', () => {
       };
       vi.mocked(mockService.deleteProfile).mockReturnValue(deleteResult);
 
-      const result = await facade.deleteProfile('old-profile');
+      const result = await facade.deleteProfile('old-profile', true);
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Profile "old-profile" deleted successfully');

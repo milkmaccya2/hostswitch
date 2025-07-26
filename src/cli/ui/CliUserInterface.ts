@@ -67,12 +67,35 @@ export class CliUserInterface implements IUserInterface {
     }
 
     if (result.success) {
+      // Show data if present (for list and show commands)
+      if (result.data) {
+        this.displayData(result.data);
+      }
+      
       if (result.message) {
         this.showMessage(result.message, 'success');
       }
     } else {
       this.showMessage(result.message || 'Operation failed', 'error');
       process.exit(1);
+    }
+  }
+
+  private displayData(data: any): void {
+    if (data.profiles) {
+      // List profiles command
+      if (data.profiles.length === 0) {
+        this.showMessage('No profiles found', 'info');
+      } else {
+        this.showMessage('Available profiles:', 'info');
+        data.profiles.forEach((profile: any) => {
+          const status = profile.isCurrent ? ' (current)' : '';
+          this.logger.info(`  ${profile.name}${status}`);
+        });
+      }
+    } else if (data.content !== undefined) {
+      // Show profile command
+      console.log(data.content);
     }
   }
 }
