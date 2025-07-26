@@ -10,6 +10,7 @@
     "dist/**/*.js",
     "dist/**/*.d.ts",
     "!dist/**/*.d.ts.map",
+    "!dist/__mocks__/**",
     "LICENSE",
     "README.md",
     "README.ja.md"
