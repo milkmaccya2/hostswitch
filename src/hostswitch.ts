@@ -7,6 +7,7 @@ import { CliUserInterface } from './cli/ui/CliUserInterface';
 import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
 import { createConfig } from './config';
 import { HostSwitchService } from './core/HostSwitchService';
+import { UpdateChecker } from './core/UpdateChecker';
 import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { PermissionChecker } from './infrastructure/PermissionChecker';
@@ -18,6 +19,7 @@ const fileSystem = new FileSystemAdapter();
 const logger = new ChalkLogger();
 const processManager = new ProcessManager();
 const permissionChecker = new PermissionChecker();
+const updateChecker = new UpdateChecker(logger);
 
 // サービス層の初期化
 const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker);
@@ -116,6 +118,11 @@ function parseCommands() {
 
 // アプリケーション起動
 async function main() {
+  // アップデートチェックを非同期で実行（ユーザーの作業を妨げない）
+  if (process.env.HOSTSWITCH_NO_UPDATE_CHECK !== 'true') {
+    updateChecker.checkForUpdateAsync();
+  }
+
   const program = parseCommands();
 
   // 引数が無い場合はインタラクティブモードを起動

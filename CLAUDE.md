@@ -225,6 +225,14 @@ Build commands:
 - `npm run clean`: Clean build directory
 - `npm run dev`: Run TypeScript directly without building
 
+## Update Notification Feature
+
+HostSwitch includes automatic update checking using `update-notifier`:
+- **Automatic check**: Runs asynchronously on startup (24-hour cache)
+- **Non-intrusive**: Doesn't block user operations
+- **Disable option**: Set `HOSTSWITCH_NO_UPDATE_CHECK=true` to disable
+- **Implementation**: `UpdateChecker` class in `src/core/UpdateChecker.ts`
+
 ## Workflow Reminders
 
 - タスクが終わるごとに@ARCHITECTURE_DIAGRAMS.md を更新する

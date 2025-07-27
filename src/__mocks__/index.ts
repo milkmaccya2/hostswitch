@@ -168,6 +168,10 @@ export class MockLogger implements ILogger {
     this.messages.push({ level: 'bold', message });
   }
 
+  debug(message: string, ...args: any[]): void {
+    this.messages.push({ level: 'debug', message: `${message} ${args.join(' ')}` });
+  }
+
   clear(): void {
     this.messages = [];
   }

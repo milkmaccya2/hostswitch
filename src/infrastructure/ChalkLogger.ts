@@ -29,4 +29,10 @@ export class ChalkLogger implements ILogger {
   bold(message: string): void {
     console.log(chalk.bold(message));
   }
+
+  debug(message: string, ...args: any[]): void {
+    if (process.env.DEBUG) {
+      console.log(chalk.gray(`[DEBUG] ${message}`), ...args);
+    }
+  }
 }

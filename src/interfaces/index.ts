@@ -26,6 +26,7 @@ export interface ILogger {
   success(message: string): void;
   dim(message: string): void;
   bold(message: string): void;
+  debug(message: string, ...args: any[]): void;
 }
 
 export interface IProcessManager {
