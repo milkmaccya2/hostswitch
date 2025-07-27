@@ -121,6 +121,7 @@ hostswitch delete development --force
 hostswitch rm development --force
 ```
 
+
 ## よくある使用例
 
 ### 開発環境のセットアップ
@@ -138,8 +139,8 @@ hostswitch edit docker
 # 172.17.0.2 api.myapp.docker
 # 172.17.0.3 db.myapp.docker
 
-# 切り替え
-sudo hostswitch switch local
+# 切り替え（自動sudo）
+hostswitch switch local
 ```
 
 ### チーム開発での活用
@@ -148,8 +149,8 @@ sudo hostswitch switch local
 # チームメンバーの環境を参照
 hostswitch create team-dev --from-current
 
-# 自分の環境に戻す
-sudo hostswitch switch local
+# 自分の環境に戻す（自動sudo）
+hostswitch switch local
 ```
 
 ### 本番環境のテスト
@@ -161,10 +162,10 @@ hostswitch edit production
 # 192.168.1.100 api.myapp.com
 # 192.168.1.101 app.myapp.com
 
-# テスト実施
-sudo hostswitch switch production
-# テスト完了後
-sudo hostswitch switch local
+# テスト実施（自動sudo）
+hostswitch switch production
+# テスト完了後（自動sudo）
+hostswitch switch local
 ```
 
 ## 開発
@@ -272,33 +273,58 @@ hostswitch/
 
 ## トラブルシューティング
 
-### sudo権限が必要な理由
+### 権限関連の問題
 
-`/etc/hosts`ファイルはroot所有のシステムファイルのため、変更には管理者権限が必要です。
+#### 自動sudo検出
+HostSwitchは自動的にsudo権限が必要な場合を検出し、管理者アクセスを要求します：
 
 ```bash
-# ✅ 正しい使い方
+# ✅ 推奨 - HostSwitchが自動的にsudoを処理
+hostswitch switch dev
+# → "Requesting administrative access..."（自動sudoプロンプト）
+
+# ✅ 手動sudoも動作します
 sudo hostswitch switch dev
 
-# ❌ エラーになる
-hostswitch switch dev  # Permission denied
+# ❌ 権限が必要な場合は自動sudoプロンプトが表示される
+hostswitch switch dev  # 自動的にsudoをプロンプト
 ```
 
-### プロファイルが見つからない場合
-
+#### Permission Deniedエラー
 ```bash
-# プロファイル一覧を確認
+# 自動sudoが失敗した場合、手動sudoを試す
+sudo hostswitch switch dev
+
+# Windowsでは管理者として実行
+# コマンドプロンプトを右クリック → "管理者として実行"
+```
+
+### プロファイル関連の問題
+
+#### プロファイルが見つからない場合
+```bash
+# 利用可能なプロファイルを確認
 hostswitch list
 
-# プロファイル名のタイポを確認
+# プロファイル名を確認（大文字小文字を区別）
 hostswitch show [プロファイル名]
+
+# プロファイルディレクトリを確認
+ls ~/.hostswitch/profiles/
+```
+
+#### プロファイルの破損
+```bash
+# 破損したプロファイルを再作成
+hostswitch delete 破損プロファイル --force
+hostswitch create 破損プロファイル --from-current
 ```
 
 ### Windowsでの使用
 
 WindowsではWSL (Windows Subsystem for Linux)の使用を推奨します。ネイティブWindowsで使用する場合は、管理者権限でコマンドプロンプトを実行してください。
 
-**注意**: ネイティブWindowsサポートが改善されました。WindowsのhostsファイルパスC:\Windows\System32\drivers\etc\hosts）を自動的に検出します。
+**注意**: ネイティブWindowsサポートが改善されました。Windowsのhostsファイルパス（`C:\Windows\System32\drivers\etc\hosts`）を自動的に検出します。
 
 ## データ保存場所
 

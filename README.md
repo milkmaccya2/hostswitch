@@ -121,6 +121,7 @@ hostswitch delete development --force
 hostswitch rm development --force
 ```
 
+
 ## Common Use Cases
 
 ### Development Environment Setup
@@ -138,8 +139,8 @@ hostswitch edit docker
 # 172.17.0.2 api.myapp.docker
 # 172.17.0.3 db.myapp.docker
 
-# Switch between them
-sudo hostswitch switch local
+# Switch between them (auto-sudo)
+hostswitch switch local
 ```
 
 ### Team Development
@@ -148,8 +149,8 @@ sudo hostswitch switch local
 # Reference team member's environment
 hostswitch create team-dev --from-current
 
-# Switch back to your environment
-sudo hostswitch switch local
+# Switch back to your environment (auto-sudo)
+hostswitch switch local
 ```
 
 ### Production Testing
@@ -161,10 +162,10 @@ hostswitch edit production
 # 192.168.1.100 api.myapp.com
 # 192.168.1.101 app.myapp.com
 
-# Run tests
-sudo hostswitch switch production
-# After testing
-sudo hostswitch switch local
+# Run tests (auto-sudo)
+hostswitch switch production
+# After testing (auto-sudo)
+hostswitch switch local
 ```
 
 ## Development
@@ -250,26 +251,51 @@ This design enables:
 
 ## Troubleshooting
 
-### Why sudo is required
+### Permission Issues
 
-The `/etc/hosts` file is a system file owned by root, so administrative privileges are required to modify it.
+#### Auto-sudo Detection
+HostSwitch automatically detects when sudo privileges are needed and will prompt for admin access:
 
 ```bash
-# ✅ Correct usage
+# ✅ Recommended - HostSwitch handles sudo automatically
+hostswitch switch dev
+# → "Requesting administrative access..." (auto-sudo prompt)
+
+# ✅ Manual sudo also works
 sudo hostswitch switch dev
 
-# ❌ Will error
-hostswitch switch dev  # Permission denied
+# ❌ Will show auto-sudo prompt if permissions needed
+hostswitch switch dev  # Auto-prompts for sudo
 ```
 
-### Profile not found
-
+#### Permission Denied Errors
 ```bash
-# Check profile list
+# If auto-sudo fails, try manual sudo
+sudo hostswitch switch dev
+
+# On Windows, run as Administrator
+# Right-click Command Prompt → "Run as administrator"
+```
+
+### Profile Issues
+
+#### Profile Not Found
+```bash
+# Check available profiles
 hostswitch list
 
-# Check for typos in profile names
+# Verify profile name (case-sensitive)
 hostswitch show [profile-name]
+
+# Check profile directory
+ls ~/.hostswitch/profiles/
+```
+
+#### Profile Corruption
+```bash
+# Recreate corrupted profile
+hostswitch delete corrupted-profile --force
+hostswitch create corrupted-profile --from-current
 ```
 
 ### Windows Usage
