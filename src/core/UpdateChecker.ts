@@ -23,7 +23,7 @@ export class UpdateChecker {
 
     this.notifier = updateNotifier({
       pkg: this.pkg,
-      updateCheckInterval: 1000 * 60 * 60 * 24, // 24 hours
+      // No updateCheckInterval - check every time
     });
   }
 
@@ -32,6 +32,15 @@ export class UpdateChecker {
       // Force check if requested
       if (options.checkNow) {
         this.notifier.check();
+      }
+
+      // Debug: Check update info
+      if (process.env.DEBUG) {
+        this.logger.debug(`Current version: ${this.pkg.version}`);
+        this.logger.debug(`Update available: ${!!this.notifier.update}`);
+        if (this.notifier.update) {
+          this.logger.debug(`Latest version: ${this.notifier.update.latest}`);
+        }
       }
 
       // Check if update is available

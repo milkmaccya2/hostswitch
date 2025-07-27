@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import packageJson from '../package.json';
 import { CliController } from './cli/CliController';
 import { HostSwitchFacade } from './cli/HostSwitchFacade';
 import { CliUserInterface } from './cli/ui/CliUserInterface';
@@ -12,7 +13,6 @@ import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { PermissionChecker } from './infrastructure/PermissionChecker';
 import { ProcessManager } from './infrastructure/ProcessManager';
-import packageJson from '../package.json';
 
 // 依存性の組み立て
 const config = createConfig();
@@ -122,6 +122,11 @@ async function main() {
   // アップデートチェックを非同期で実行（ユーザーの作業を妨げない）
   if (process.env.HOSTSWITCH_NO_UPDATE_CHECK !== 'true') {
     updateChecker.checkForUpdateAsync();
+  }
+  
+  // テスト用：強制アップデートチェック
+  if (process.env.HOSTSWITCH_FORCE_UPDATE_CHECK === 'true') {
+    updateChecker.checkForUpdate({ checkNow: true });
   }
 
   const program = parseCommands();
