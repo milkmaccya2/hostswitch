@@ -60,6 +60,7 @@ describe('Integration Tests', () => {
       success: vi.fn(),
       dim: vi.fn(),
       bold: vi.fn(),
+      debug: vi.fn(),
     };
 
     mockProcessManager = {
@@ -211,7 +212,7 @@ describe('Integration Tests', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
       vi.spyOn(facade, 'createProfile').mockResolvedValue({
         success: false,
         message: 'Profile creation failed',
@@ -236,7 +237,7 @@ describe('Integration Tests', () => {
       const listResult = await facade.listProfiles();
 
       expect(listResult.success).toBe(true);
-      expect(listResult.data?.profiles).toHaveLength(2);
+      expect((listResult.data as { profiles: unknown[] })?.profiles).toHaveLength(2);
     });
 
     it('should handle user input validation', async () => {
@@ -263,7 +264,8 @@ describe('Integration Tests', () => {
     });
 
     it('should handle unknown command type', async () => {
-      await controller.executeCommand('unknown' as any, {});
+      // @ts-expect-error Testing invalid command type
+      await controller.executeCommand('unknown', {});
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Error executing command: Unknown command type: unknown'
       );

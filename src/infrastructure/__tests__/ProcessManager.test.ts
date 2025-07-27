@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessManager } from '../ProcessManager';
 
@@ -6,7 +6,7 @@ vi.mock('child_process');
 
 describe('ProcessManager', () => {
   let manager: ProcessManager;
-  const mockExecSync = execSync as any;
+  const mockExecSync = vi.mocked(execSync);
 
   beforeEach(() => {
     manager = new ProcessManager();
@@ -15,7 +15,7 @@ describe('ProcessManager', () => {
 
   describe('executeEditor()', () => {
     it('エディタを正常に実行', async () => {
-      mockExecSync.mockReturnValue(undefined);
+      mockExecSync.mockReturnValue(Buffer.from(''));
 
       await manager.executeEditor('vi', '/test/file.txt');
 
@@ -23,7 +23,7 @@ describe('ProcessManager', () => {
     });
 
     it('複数の引数を持つエディタコマンドを実行', async () => {
-      mockExecSync.mockReturnValue(undefined);
+      mockExecSync.mockReturnValue(Buffer.from(''));
 
       await manager.executeEditor('code --wait', '/test/file.txt');
 
@@ -42,8 +42,7 @@ describe('ProcessManager', () => {
     });
 
     it('エディタが終了コード1で終了した場合も例外を投げる', async () => {
-      const error = new Error('Command failed: editor') as any;
-      error.status = 1;
+      const error = Object.assign(new Error('Command failed: editor'), { status: 1 });
       mockExecSync.mockImplementation(() => {
         throw error;
       });
@@ -54,7 +53,7 @@ describe('ProcessManager', () => {
     });
 
     it('Promise.resolveで成功を返す', async () => {
-      mockExecSync.mockReturnValue(undefined);
+      mockExecSync.mockReturnValue(Buffer.from(''));
 
       const result = manager.executeEditor('vi', '/test/file.txt');
 
@@ -62,7 +61,7 @@ describe('ProcessManager', () => {
     });
 
     it('execSyncにstdio: inheritオプションを渡す', async () => {
-      mockExecSync.mockReturnValue(undefined);
+      mockExecSync.mockReturnValue(Buffer.from(''));
 
       await manager.executeEditor('vim', '/path/to/file');
 

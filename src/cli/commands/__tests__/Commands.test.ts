@@ -9,7 +9,7 @@ import { ShowProfileCommand } from '../ShowProfileCommand';
 import { SwitchProfileCommand } from '../SwitchProfileCommand';
 
 describe('Command Classes', () => {
-  let mockFacade: HostSwitchFacade;
+  let mockFacade: Partial<HostSwitchFacade>;
 
   beforeEach(() => {
     mockFacade = {
@@ -22,15 +22,15 @@ describe('Command Classes', () => {
       switchProfileWithSudo: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
-    } as any;
+    };
   });
 
   describe('ListProfilesCommand', () => {
     it('should execute listProfiles on facade', async () => {
       const expectedResult: ICommandResult = { success: true, data: { profiles: [] } };
-      vi.mocked(mockFacade.listProfiles).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.listProfiles!).mockResolvedValue(expectedResult);
 
-      const command = new ListProfilesCommand(mockFacade);
+      const command = new ListProfilesCommand(mockFacade as HostSwitchFacade);
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -41,9 +41,9 @@ describe('Command Classes', () => {
   describe('CreateProfileCommand', () => {
     it('should execute createProfile with default fromCurrent=false', async () => {
       const expectedResult: ICommandResult = { success: true, message: 'Created' };
-      vi.mocked(mockFacade.createProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.createProfile!).mockResolvedValue(expectedResult);
 
-      const command = new CreateProfileCommand(mockFacade, 'test-profile');
+      const command = new CreateProfileCommand(mockFacade as HostSwitchFacade, 'test-profile');
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -52,9 +52,9 @@ describe('Command Classes', () => {
 
     it('should execute createProfile with fromCurrent=true', async () => {
       const expectedResult: ICommandResult = { success: true, message: 'Created' };
-      vi.mocked(mockFacade.createProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.createProfile!).mockResolvedValue(expectedResult);
 
-      const command = new CreateProfileCommand(mockFacade, 'test-profile', true);
+      const command = new CreateProfileCommand(mockFacade as HostSwitchFacade, 'test-profile', true);
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -65,9 +65,9 @@ describe('Command Classes', () => {
   describe('SwitchProfileCommand', () => {
     it('should execute switchProfile on facade', async () => {
       const expectedResult: ICommandResult = { success: true, message: 'Switched' };
-      vi.mocked(mockFacade.switchProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.switchProfile!).mockResolvedValue(expectedResult);
 
-      const command = new SwitchProfileCommand(mockFacade, 'staging');
+      const command = new SwitchProfileCommand(mockFacade as HostSwitchFacade, 'staging');
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -78,9 +78,9 @@ describe('Command Classes', () => {
   describe('EditProfileCommand', () => {
     it('should execute editProfile on facade', async () => {
       const expectedResult: ICommandResult = { success: true, message: 'Edited' };
-      vi.mocked(mockFacade.editProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.editProfile!).mockResolvedValue(expectedResult);
 
-      const command = new EditProfileCommand(mockFacade, 'local');
+      const command = new EditProfileCommand(mockFacade as HostSwitchFacade, 'local');
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -91,9 +91,9 @@ describe('Command Classes', () => {
   describe('ShowProfileCommand', () => {
     it('should execute showProfile on facade', async () => {
       const expectedResult: ICommandResult = { success: true, data: { content: '...' } };
-      vi.mocked(mockFacade.showProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.showProfile!).mockResolvedValue(expectedResult);
 
-      const command = new ShowProfileCommand(mockFacade, 'production');
+      const command = new ShowProfileCommand(mockFacade as HostSwitchFacade, 'production');
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
@@ -104,9 +104,9 @@ describe('Command Classes', () => {
   describe('DeleteProfileCommand', () => {
     it('should execute deleteProfile on facade', async () => {
       const expectedResult: ICommandResult = { success: true, message: 'Deleted' };
-      vi.mocked(mockFacade.deleteProfile).mockResolvedValue(expectedResult);
+      vi.mocked(mockFacade.deleteProfile!).mockResolvedValue(expectedResult);
 
-      const command = new DeleteProfileCommand(mockFacade, 'old-profile');
+      const command = new DeleteProfileCommand(mockFacade as HostSwitchFacade, 'old-profile');
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);

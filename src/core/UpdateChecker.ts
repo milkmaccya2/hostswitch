@@ -15,7 +15,7 @@ interface PackageJson {
 
 export class UpdateChecker {
   private pkg: PackageJson;
-  private notifier: any;
+  private notifier: ReturnType<typeof updateNotifier>;
 
   constructor(private logger: ILogger) {
     const packageJsonPath = join(__dirname, '../../package.json');
@@ -51,7 +51,7 @@ export class UpdateChecker {
     } catch (error) {
       // Silently fail - don't interrupt user's workflow
       if (!options.silent) {
-        this.logger.debug('Update check failed:', error);
+        this.logger.debug(`Update check failed: ${error}`);
       }
     }
   }

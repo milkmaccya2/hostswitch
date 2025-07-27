@@ -9,11 +9,11 @@ import type {
 export class MockFileSystem implements IFileSystem {
   private files = new Map<string, string>();
   private directories = new Set<string>();
-  public calls: Array<{ method: string; args: any[] }> = [];
+  public calls: Array<{ method: string; args: unknown[] }> = [];
   private throwOnNext = false;
   private nextError: Error = new Error();
 
-  private recordCall(method: string, ...args: any[]) {
+  private recordCall(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
   }
 
@@ -89,7 +89,7 @@ export class MockFileSystem implements IFileSystem {
     // パス配下のファイル一覧を返す（簡略実装）
     const files: string[] = [];
     for (const filePath of this.files.keys()) {
-      if (filePath.startsWith(path + '/')) {
+      if (filePath.startsWith(`${path}/`)) {
         const fileName = filePath.substring(path.length + 1);
         if (!fileName.includes('/')) {
           files.push(fileName);
@@ -99,13 +99,13 @@ export class MockFileSystem implements IFileSystem {
     return files;
   }
 
-  readJsonSync(path: string): any {
+  readJsonSync<T = unknown>(path: string): T {
     this.recordCall('readJsonSync', path);
     const content = this.readFileSync(path);
-    return JSON.parse(content);
+    return JSON.parse(content) as T;
   }
 
-  writeJsonSync(path: string, data: any): void {
+  writeJsonSync<T = unknown>(path: string, data: T): void {
     this.recordCall('writeJsonSync', path, data);
     this.writeFileSync(path, JSON.stringify(data, null, 2));
   }
@@ -124,7 +124,7 @@ export class MockFileSystem implements IFileSystem {
     this.calls = [];
   }
 
-  getCalls(method?: string): Array<{ method: string; args: any[] }> {
+  getCalls(method?: string): Array<{ method: string; args: unknown[] }> {
     if (method) {
       return this.calls.filter((call) => call.method === method);
     }
@@ -168,8 +168,8 @@ export class MockLogger implements ILogger {
     this.messages.push({ level: 'bold', message });
   }
 
-  debug(message: string, ...args: any[]): void {
-    this.messages.push({ level: 'debug', message: `${message} ${args.join(' ')}` });
+  debug(message: string): void {
+    this.messages.push({ level: 'debug', message });
   }
 
   clear(): void {
@@ -225,9 +225,9 @@ export class MockPermissionChecker implements IPermissionChecker {
   public requiresSudoResult = false;
   public isRunningAsSudoResult = false;
   public rerunWithSudoResult: SudoResult = { success: true, message: 'Success' };
-  public calls: Array<{ method: string; args: any[] }> = [];
+  public calls: Array<{ method: string; args: unknown[] }> = [];
 
-  private recordCall(method: string, ...args: any[]) {
+  private recordCall(method: string, ...args: unknown[]) {
     this.calls.push({ method, args });
   }
 

@@ -14,8 +14,8 @@ export interface IFileSystem {
   existsSync(path: string): boolean;
   ensureDirSync(path: string): void;
   readdirSync(path: string): string[];
-  readJsonSync(path: string): any;
-  writeJsonSync(path: string, data: any): void;
+  readJsonSync<T = unknown>(path: string): T;
+  writeJsonSync<T = unknown>(path: string, data: T): void;
 }
 
 export interface ILogger {
@@ -26,7 +26,7 @@ export interface ILogger {
   success(message: string): void;
   dim(message: string): void;
   bold(message: string): void;
-  debug(message: string, ...args: any[]): void;
+  debug(message: string): void;
 }
 
 export interface IProcessManager {
@@ -91,7 +91,7 @@ export interface ICommand {
 export interface ICommandResult {
   success: boolean;
   message?: string;
-  data?: any;
+  data?: unknown;
   requiresConfirmation?: boolean;
   requiresSudo?: boolean;
   sudoCommand?: string;

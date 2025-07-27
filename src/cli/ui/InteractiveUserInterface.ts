@@ -5,6 +5,7 @@ import type {
   ILogger,
   IUserInterface,
   MessageType,
+  ProfileInfo,
 } from '../../interfaces';
 import type { HostSwitchFacade } from '../HostSwitchFacade';
 
@@ -161,8 +162,9 @@ export class InteractiveUserInterface implements IUserInterface {
   private async handleListProfiles(): Promise<void> {
     const result = await this.facade.listProfiles();
 
-    if (result.success && result.data?.profiles) {
-      const profiles = result.data.profiles;
+    if (result.success && result.data) {
+      const data = result.data as { profiles: ProfileInfo[] };
+      const profiles = data.profiles;
       if (profiles.length === 0) {
         this.showMessage('No profiles found. Create one first!', 'info');
       } else {
@@ -179,16 +181,17 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleSwitchProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (
-      !listResult.success ||
-      !listResult.data?.profiles ||
-      listResult.data.profiles.length === 0
-    ) {
+    if (!listResult.success || !listResult.data) {
+      this.showMessage('No profiles available to switch to', 'warning');
+      return;
+    }
+    const listData = listResult.data as { profiles: ProfileInfo[] };
+    if (listData.profiles.length === 0) {
       this.showMessage('No profiles available to switch to', 'warning');
       return;
     }
 
-    const switchableProfiles = listResult.data.profiles.filter((p: any) => !p.isActive);
+    const switchableProfiles = listData.profiles.filter((p) => !p.isActive);
     if (switchableProfiles.length === 0) {
       this.showMessage('No other profiles available to switch to', 'info');
       return;
@@ -220,16 +223,17 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleEditProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (
-      !listResult.success ||
-      !listResult.data?.profiles ||
-      listResult.data.profiles.length === 0
-    ) {
+    if (!listResult.success || !listResult.data) {
+      this.showMessage('No profiles available to edit', 'warning');
+      return;
+    }
+    const listData = listResult.data as { profiles: ProfileInfo[] };
+    if (listData.profiles.length === 0) {
       this.showMessage('No profiles available to edit', 'warning');
       return;
     }
 
-    const choices: Choice<string>[] = listResult.data.profiles.map((p: any) => ({
+    const choices: Choice<string>[] = listData.profiles.map((p) => ({
       name: p.name,
       value: p.name,
     }));
@@ -241,16 +245,17 @@ export class InteractiveUserInterface implements IUserInterface {
 
   private async handleShowProfile(): Promise<void> {
     const listResult = await this.facade.listProfiles();
-    if (
-      !listResult.success ||
-      !listResult.data?.profiles ||
-      listResult.data.profiles.length === 0
-    ) {
+    if (!listResult.success || !listResult.data) {
+      this.showMessage('No profiles available to show', 'warning');
+      return;
+    }
+    const listData = listResult.data as { profiles: ProfileInfo[] };
+    if (listData.profiles.length === 0) {
       this.showMessage('No profiles available to show', 'warning');
       return;
     }
 
-    const choices: Choice<string>[] = listResult.data.profiles.map((p: any) => ({
+    const choices: Choice<string>[] = listData.profiles.map((p) => ({
       name: p.name,
       value: p.name,
     }));
@@ -258,9 +263,10 @@ export class InteractiveUserInterface implements IUserInterface {
     const profileName = await this.promptSelect('Select profile to show:', choices);
     const result = await this.facade.showProfile(profileName);
 
-    if (result.success && result.data?.content) {
+    if (result.success && result.data) {
+      const data = result.data as { content: string };
       this.showMessage(`\nContent of profile "${profileName}":`, 'info');
-      this.showMessage(result.data.content, 'info');
+      this.showMessage(data.content, 'info');
     } else {
       await this.handleCommandResult(result);
     }
