@@ -3,8 +3,8 @@ import { ChalkLogger } from '../ChalkLogger';
 
 describe('ChalkLogger', () => {
   let logger: ChalkLogger;
-  let consoleSpy: any;
-  let consoleErrorSpy: any;
+  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     logger = new ChalkLogger();

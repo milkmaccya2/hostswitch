@@ -197,7 +197,7 @@ export class InteractiveUserInterface implements IUserInterface {
       return;
     }
 
-    const choices: Choice<string>[] = switchableProfiles.map((p: any) => ({
+    const choices: Choice<string>[] = switchableProfiles.map((p) => ({
       name: p.name,
       value: p.name,
     }));

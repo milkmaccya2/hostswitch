@@ -17,7 +17,7 @@ vi.mock('fs-extra', () => ({
 
 describe('FileSystemAdapter', () => {
   let adapter: FileSystemAdapter;
-  let mockFs: any;
+  let mockFs: typeof import('fs-extra');
 
   beforeEach(async () => {
     adapter = new FileSystemAdapter();

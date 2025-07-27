@@ -38,11 +38,11 @@ export class FileSystemAdapter implements IFileSystem {
     return fs.readdirSync(path);
   }
 
-  readJsonSync(path: string): any {
-    return fs.readJsonSync(path);
+  readJsonSync<T = unknown>(path: string): T {
+    return fs.readJsonSync(path) as T;
   }
 
-  writeJsonSync(path: string, data: any): void {
+  writeJsonSync<T = unknown>(path: string, data: T): void {
     fs.writeJsonSync(path, data);
   }
 }

@@ -22,7 +22,7 @@ describe('User Interface Classes', () => {
       switchProfileWithSudo: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
-    } as any;
+    } as HostSwitchFacade;
 
     mockLogger = {
       info: vi.fn(),
@@ -32,6 +32,7 @@ describe('User Interface Classes', () => {
       success: vi.fn(),
       dim: vi.fn(),
       bold: vi.fn(),
+      debug: vi.fn(),
     };
 
     vi.clearAllMocks();
@@ -214,8 +215,10 @@ describe('User Interface Classes', () => {
 
         await interactiveUI.promptInput('Enter name:', validator);
 
-        const call = vi.mocked(inquirer.prompt).mock.calls[0][0] as any;
-        expect(call[0].validate).toBe(validator);
+        const call = vi.mocked(inquirer.prompt).mock.calls[0][0] as inquirer.QuestionCollection;
+        if (Array.isArray(call)) {
+          expect((call[0] as inquirer.InputQuestion).validate).toBe(validator);
+        }
       });
     });
 

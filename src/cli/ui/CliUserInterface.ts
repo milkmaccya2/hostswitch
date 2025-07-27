@@ -4,6 +4,7 @@ import type {
   ILogger,
   IUserInterface,
   MessageType,
+  ProfileInfo,
 } from '../../interfaces';
 
 export class CliUserInterface implements IUserInterface {
@@ -49,51 +50,66 @@ export class CliUserInterface implements IUserInterface {
 
   async handleCommandResult(result: ICommandResult): Promise<void> {
     if (result.requiresSudo) {
-      this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
-
-      // テスト環境では実際のsudo実行をスキップ
-      if (
-        process.env.NODE_ENV === 'test' ||
-        process.env.VITEST === 'true' ||
-        process.env.npm_lifecycle_event?.includes('test')
-      ) {
-        this.showMessage('(Skipped in test environment)', 'info');
-        return;
-      }
-
-      // sudoCommandが存在しない場合はエラー
-      if (!result.sudoCommand) {
-        this.showMessage('No sudo command provided', 'error');
-        return;
-      }
-
-      // 自動的にsudoで再実行
-      try {
-        const { execSync } = require('node:child_process');
-        // 現在のプロセスの引数を使ってsudoで再実行
-        const args = process.argv.slice(2).join(' ');
-        execSync(`sudo ${process.argv[0]} ${process.argv[1]} ${args}`, { stdio: 'inherit' });
-        process.exit(0);
-      } catch (_error) {
-        this.showMessage('Failed to execute with sudo', 'error');
-        process.exit(1);
-      }
-    }
-
-    if (result.requiresConfirmation) {
-      this.showMessage(
-        'This operation requires confirmation. Add --force flag to proceed without confirmation.',
-        'warning'
-      );
+      await this.handleSudoRequired(result);
       return;
     }
 
+    if (result.requiresConfirmation) {
+      this.handleConfirmationRequired();
+      return;
+    }
+
+    this.handleResult(result);
+  }
+
+  private async handleSudoRequired(result: ICommandResult): Promise<void> {
+    this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
+
+    if (this.isTestEnvironment()) {
+      this.showMessage('(Skipped in test environment)', 'info');
+      return;
+    }
+
+    if (!result.sudoCommand) {
+      this.showMessage('No sudo command provided', 'error');
+      return;
+    }
+
+    await this.executeSudo();
+  }
+
+  private isTestEnvironment(): boolean {
+    return (
+      process.env.NODE_ENV === 'test' ||
+      process.env.VITEST === 'true' ||
+      Boolean(process.env.npm_lifecycle_event?.includes('test'))
+    );
+  }
+
+  private async executeSudo(): Promise<void> {
+    try {
+      const { execSync } = require('node:child_process');
+      const args = process.argv.slice(2).join(' ');
+      execSync(`sudo ${process.argv[0]} ${process.argv[1]} ${args}`, { stdio: 'inherit' });
+      process.exit(0);
+    } catch (_error) {
+      this.showMessage('Failed to execute with sudo', 'error');
+      process.exit(1);
+    }
+  }
+
+  private handleConfirmationRequired(): void {
+    this.showMessage(
+      'This operation requires confirmation. Add --force flag to proceed without confirmation.',
+      'warning'
+    );
+  }
+
+  private handleResult(result: ICommandResult): void {
     if (result.success) {
-      // Show data if present (for list and show commands)
       if (result.data) {
         this.displayData(result.data);
       }
-
       if (result.message) {
         this.showMessage(result.message, 'success');
       }
@@ -103,21 +119,23 @@ export class CliUserInterface implements IUserInterface {
     }
   }
 
-  private displayData(data: any): void {
-    if (data.profiles) {
+  private displayData(data: unknown): void {
+    if (data && typeof data === 'object' && 'profiles' in data) {
       // List profiles command
-      if (data.profiles.length === 0) {
+      const profilesData = data as { profiles: ProfileInfo[] };
+      if (profilesData.profiles.length === 0) {
         this.showMessage('No profiles found', 'info');
       } else {
         this.showMessage('Available profiles:', 'info');
-        data.profiles.forEach((profile: any) => {
+        profilesData.profiles.forEach((profile) => {
           const status = profile.isCurrent ? ' (current)' : '';
           this.logger.info(`  ${profile.name}${status}`);
         });
       }
-    } else if (data.content !== undefined) {
+    } else if (data && typeof data === 'object' && 'content' in data) {
       // Show profile command
-      console.log(data.content);
+      const contentData = data as { content: string };
+      console.log(contentData.content);
     }
   }
 }

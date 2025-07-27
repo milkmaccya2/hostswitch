@@ -15,7 +15,17 @@ import { HostSwitchFacade } from '../HostSwitchFacade';
 
 describe('HostSwitchFacade', () => {
   let facade: HostSwitchFacade;
-  let mockService: HostSwitchService;
+  let mockService: Partial<HostSwitchService> & {
+    getProfiles: ReturnType<typeof vi.fn>;
+    createProfile: ReturnType<typeof vi.fn>;
+    switchProfile: ReturnType<typeof vi.fn>;
+    deleteProfile: ReturnType<typeof vi.fn>;
+    getProfileContent: ReturnType<typeof vi.fn>;
+    profileExists: ReturnType<typeof vi.fn>;
+    getProfilePath: ReturnType<typeof vi.fn>;
+    getCurrentProfile: ReturnType<typeof vi.fn>;
+    getConfig: ReturnType<typeof vi.fn>;
+  };
   let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
   let mockPermissionChecker: IPermissionChecker;
@@ -31,7 +41,7 @@ describe('HostSwitchFacade', () => {
       getProfilePath: vi.fn(),
       getCurrentProfile: vi.fn(),
       getConfig: vi.fn().mockReturnValue({ hostsPath: '/etc/hosts' }),
-    } as any;
+    };
 
     _mockLogger = {
       info: vi.fn(),
@@ -41,6 +51,7 @@ describe('HostSwitchFacade', () => {
       success: vi.fn(),
       dim: vi.fn(),
       bold: vi.fn(),
+      debug: vi.fn(),
     };
 
     mockProcessManager = {
@@ -56,7 +67,11 @@ describe('HostSwitchFacade', () => {
       rerunWithSudo: vi.fn(),
     };
 
-    facade = new HostSwitchFacade(mockService, mockProcessManager, mockPermissionChecker);
+    facade = new HostSwitchFacade(
+      mockService as HostSwitchService,
+      mockProcessManager,
+      mockPermissionChecker
+    );
   });
 
   describe('listProfiles', () => {

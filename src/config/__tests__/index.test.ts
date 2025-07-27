@@ -77,7 +77,7 @@ describe('createConfig', () => {
   describe('プラットフォーム固有の動作', () => {
     it('未知のプラットフォームではUnix形式のパスを使用', () => {
       Object.defineProperty(process, 'platform', {
-        value: 'unknown' as any,
+        value: 'unknown' as NodeJS.Platform,
         writable: true,
       });
 

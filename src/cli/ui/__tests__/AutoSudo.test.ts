@@ -23,7 +23,7 @@ describe('Auto-Sudo Functionality', () => {
 
     mockFacade = {
       switchProfileWithSudo: vi.fn(),
-    } as any;
+    } as Pick<HostSwitchFacade, 'switchProfileWithSudo'>;
 
     cliUI = new CliUserInterface(mockLogger);
     interactiveUI = new InteractiveUserInterface(mockFacade, mockLogger);

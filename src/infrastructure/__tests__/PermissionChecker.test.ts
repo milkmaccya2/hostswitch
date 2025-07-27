@@ -16,13 +16,13 @@ vi.mock('fs-extra', () => ({
 
 describe('PermissionChecker', () => {
   let permissionChecker: PermissionChecker;
-  let mockSpawn: any;
-  let mockFs: any;
+  let mockSpawn: ReturnType<typeof vi.mocked<typeof spawn>>;
+  let mockFs: typeof import('fs-extra');
 
   beforeEach(async () => {
     permissionChecker = new PermissionChecker();
     mockSpawn = vi.mocked(spawn);
-    mockFs = (await vi.importMock('fs-extra')) as any;
+    mockFs = await vi.importMock('fs-extra');
 
     // デフォルトのモック設定をリセット
     vi.clearAllMocks();
@@ -139,7 +139,7 @@ describe('PermissionChecker', () => {
 
     it('process.getuidが利用できない環境ではSUDO_USER環境変数のみで判定', () => {
       const originalGetuid = process.getuid;
-      delete (process as any).getuid;
+      delete (process as NodeJS.Process).getuid;
       delete process.env.SUDO_USER;
 
       const result = permissionChecker.isRunningAsSudo();
@@ -154,13 +154,13 @@ describe('PermissionChecker', () => {
   describe('rerunWithSudo()', () => {
     it('sudoコマンドが成功した場合は成功結果を返す', async () => {
       const mockChild = {
-        on: vi.fn((event: string, callback: Function) => {
+        on: vi.fn((event: string, callback: (code: number | null) => void) => {
           if (event === 'exit') {
             // 成功をシミュレート
             setTimeout(() => callback(0), 10);
           }
         }),
-      };
+      } as unknown as ReturnType<typeof spawn>;
       mockSpawn.mockReturnValue(mockChild);
 
       const result = await permissionChecker.rerunWithSudo(['switch', 'dev']);
@@ -175,13 +175,13 @@ describe('PermissionChecker', () => {
 
     it('sudoコマンドが失敗した場合は失敗結果を返す', async () => {
       const mockChild = {
-        on: vi.fn((event: string, callback: Function) => {
+        on: vi.fn((event: string, callback: (code: number | null) => void) => {
           if (event === 'exit') {
             // 失敗をシミュレート
             setTimeout(() => callback(1), 10);
           }
         }),
-      };
+      } as unknown as ReturnType<typeof spawn>;
       mockSpawn.mockReturnValue(mockChild);
 
       const result = await permissionChecker.rerunWithSudo(['switch', 'dev']);
@@ -192,13 +192,18 @@ describe('PermissionChecker', () => {
 
     it('spawnでエラーが発生した場合は失敗結果を返す', async () => {
       const mockChild = {
-        on: vi.fn((event: string, callback: Function) => {
-          if (event === 'error') {
-            // エラーをシミュレート
-            setTimeout(() => callback(new Error('Command not found')), 10);
+        on: vi.fn(
+          (event: string, callback: ((code: number | null) => void) | ((error: Error) => void)) => {
+            if (event === 'error') {
+              // エラーをシミュレート
+              setTimeout(
+                () => (callback as (error: Error) => void)(new Error('Command not found')),
+                10
+              );
+            }
           }
-        }),
-      };
+        ),
+      } as unknown as ReturnType<typeof spawn>;
       mockSpawn.mockReturnValue(mockChild);
 
       const result = await permissionChecker.rerunWithSudo(['switch', 'dev']);
@@ -215,12 +220,12 @@ describe('PermissionChecker', () => {
       process.env.npm_execpath = '/usr/bin/npm';
 
       const mockChild = {
-        on: vi.fn((event: string, callback: Function) => {
+        on: vi.fn((event: string, callback: (code: number | null) => void) => {
           if (event === 'exit') {
             setTimeout(() => callback(0), 10);
           }
         }),
-      };
+      } as unknown as ReturnType<typeof spawn>;
       mockSpawn.mockReturnValue(mockChild);
 
       await permissionChecker.rerunWithSudo(['switch', 'dev']);
@@ -247,12 +252,12 @@ describe('PermissionChecker', () => {
       delete process.env.npm_execpath;
 
       const mockChild = {
-        on: vi.fn((event: string, callback: Function) => {
+        on: vi.fn((event: string, callback: (code: number | null) => void) => {
           if (event === 'exit') {
             setTimeout(() => callback(0), 10);
           }
         }),
-      };
+      } as unknown as ReturnType<typeof spawn>;
       mockSpawn.mockReturnValue(mockChild);
 
       await permissionChecker.rerunWithSudo(['switch', 'dev']);
