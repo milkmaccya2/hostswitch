@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
+import updateNotifier from 'update-notifier';
 import packageJson from '../package.json';
 import { CliController } from './cli/CliController';
 import { HostSwitchFacade } from './cli/HostSwitchFacade';
@@ -8,7 +9,6 @@ import { CliUserInterface } from './cli/ui/CliUserInterface';
 import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
 import { createConfig } from './config';
 import { HostSwitchService } from './core/HostSwitchService';
-import { UpdateChecker } from './core/UpdateChecker';
 import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { PermissionChecker } from './infrastructure/PermissionChecker';
@@ -20,7 +20,6 @@ const fileSystem = new FileSystemAdapter();
 const logger = new ChalkLogger();
 const processManager = new ProcessManager();
 const permissionChecker = new PermissionChecker();
-const updateChecker = new UpdateChecker(logger);
 
 // サービス層の初期化
 const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker);
@@ -119,15 +118,12 @@ function parseCommands() {
 
 // アプリケーション起動
 async function main() {
-  // アップデートチェックを非同期で実行（ユーザーの作業を妨げない）
-  if (process.env.HOSTSWITCH_NO_UPDATE_CHECK !== 'true') {
-    updateChecker.checkForUpdateAsync();
-  }
-  
-  // テスト用：強制アップデートチェック
-  if (process.env.HOSTSWITCH_FORCE_UPDATE_CHECK === 'true') {
-    updateChecker.checkForUpdate({ checkNow: true });
-  }
+  // アップデートチェック
+  updateNotifier({
+    pkg: packageJson,
+    updateCheckInterval: 0,
+    shouldNotifyInNpmScript: true,
+  }).notify({ isGlobal: true });
 
   const program = parseCommands();
 
