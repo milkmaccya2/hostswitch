@@ -12,6 +12,7 @@ import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { PermissionChecker } from './infrastructure/PermissionChecker';
 import { ProcessManager } from './infrastructure/ProcessManager';
+import packageJson from '../package.json';
 
 // 依存性の組み立て
 const config = createConfig();
@@ -34,7 +35,7 @@ function parseCommands() {
   program
     .name('hostswitch')
     .description('A CLI tool for switching hosts file profiles')
-    .version('1.0.6');
+    .version(packageJson.version);
 
   // List profiles command
   program
