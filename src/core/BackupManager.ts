@@ -12,7 +12,7 @@ export class BackupManager {
     try {
       this.fileSystem.copySync(this.config.hostsPath, backupPath);
       return backupPath;
-    } catch (err) {
+    } catch (_err) {
       return undefined;
     }
   }

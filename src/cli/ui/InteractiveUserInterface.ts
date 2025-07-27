@@ -302,7 +302,7 @@ export class InteractiveUserInterface implements IUserInterface {
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges.', 'warning');
 
-    if (result.sudoCommand && result.sudoCommand.includes('switch')) {
+    if (result.sudoCommand?.includes('switch')) {
       // sudo hostswitch switch profile-name の形式から profile-name を抽出
       const parts = result.sudoCommand.split(' ');
       const switchIndex = parts.indexOf('switch');

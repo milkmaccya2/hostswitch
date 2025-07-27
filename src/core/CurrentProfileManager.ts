@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import * as crypto from 'node:crypto';
 import type { HostSwitchConfig, IFileSystem, ProfileData } from '../interfaces';
 
 export class CurrentProfileManager {
@@ -35,7 +35,7 @@ export class CurrentProfileManager {
       if (this.fileSystem.existsSync(this.config.currentProfileFile)) {
         return this.fileSystem.readJsonSync(this.config.currentProfileFile) as ProfileData;
       }
-    } catch (err) {
+    } catch (_err) {
       // エラーログはlogger経由で出力しないでnullを返すだけにする
     }
     return null;
@@ -45,7 +45,7 @@ export class CurrentProfileManager {
     try {
       const content = this.fileSystem.readFileSync(this.config.hostsPath);
       return crypto.createHash('md5').update(content).digest('hex');
-    } catch (err) {
+    } catch (_err) {
       return null;
     }
   }

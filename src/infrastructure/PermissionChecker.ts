@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import { spawn } from 'node:child_process';
 import * as fs from 'fs-extra';
 import type { IPermissionChecker, SudoResult } from '../interfaces';
 
@@ -7,7 +7,7 @@ export class PermissionChecker implements IPermissionChecker {
     try {
       // copySync操作に必要な権限をテストする
       // 一時的なバックアップファイルでcopySync操作をシミュレート
-      const tempPath = filePath + '.hostswitch-test';
+      const tempPath = `${filePath}.hostswitch-test`;
 
       // 元ファイルの内容を読み取り
       const originalContent = await fs.readFile(filePath, 'utf8');
@@ -22,7 +22,7 @@ export class PermissionChecker implements IPermissionChecker {
       await fs.unlink(tempPath);
 
       return true;
-    } catch (error) {
+    } catch (_error) {
       // EACCES (Permission denied) またはその他のエラーの場合はfalse
       return false;
     }

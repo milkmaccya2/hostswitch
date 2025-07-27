@@ -54,7 +54,11 @@ describe('Command Classes', () => {
       const expectedResult: ICommandResult = { success: true, message: 'Created' };
       vi.mocked(mockFacade.createProfile!).mockResolvedValue(expectedResult);
 
-      const command = new CreateProfileCommand(mockFacade as HostSwitchFacade, 'test-profile', true);
+      const command = new CreateProfileCommand(
+        mockFacade as HostSwitchFacade,
+        'test-profile',
+        true
+      );
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);

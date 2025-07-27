@@ -42,7 +42,7 @@ describe('ChalkLogger', () => {
 
       logger.error(message);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Error: ' + message));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining(`Error: ${message}`));
     });
   });
 

@@ -16,7 +16,7 @@ import { HostSwitchFacade } from '../HostSwitchFacade';
 describe('HostSwitchFacade', () => {
   let facade: HostSwitchFacade;
   let mockService: HostSwitchService;
-  let mockLogger: ILogger;
+  let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
   let mockPermissionChecker: IPermissionChecker;
 
@@ -33,7 +33,7 @@ describe('HostSwitchFacade', () => {
       getConfig: vi.fn().mockReturnValue({ hostsPath: '/etc/hosts' }),
     } as any;
 
-    mockLogger = {
+    _mockLogger = {
       info: vi.fn(),
       warn: vi.fn(),
       warning: vi.fn(),
