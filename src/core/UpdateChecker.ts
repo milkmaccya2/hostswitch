@@ -34,15 +34,6 @@ export class UpdateChecker {
         this.notifier.check();
       }
 
-      // Debug: Check update info
-      if (process.env.DEBUG) {
-        this.logger.debug(`Current version: ${this.pkg.version}`);
-        this.logger.debug(`Update available: ${!!this.notifier.update}`);
-        if (this.notifier.update) {
-          this.logger.debug(`Latest version: ${this.notifier.update.latest}`);
-        }
-      }
-
       // Check if update is available
       if (this.notifier.update && !options.silent) {
         this.notifier.notify({
