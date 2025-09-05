@@ -5,6 +5,7 @@ import { PermissionChecker } from '../PermissionChecker';
 vi.mock('child_process');
 vi.mock('fs-extra', () => ({
   access: vi.fn(),
+  accessSync: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   copy: vi.fn(),
@@ -26,6 +27,7 @@ describe('PermissionChecker', () => {
 
     // デフォルトのモック設定をリセット
     vi.clearAllMocks();
+    mockFs.accessSync.mockReset();
   });
 
   afterEach(() => {
@@ -89,17 +91,32 @@ describe('PermissionChecker', () => {
     });
 
     it('書き込み権限がある場合はfalseを返す', () => {
-      // 新しい実装では、sudo権限がない限り常にtrueを返すように変更
+      const originalGetuid = process.getuid;
+      process.getuid = vi.fn().mockReturnValue(1000);
+      mockFs.accessSync.mockReturnValue(undefined);
+
       const result = permissionChecker.requiresSudo('/test/file');
 
-      expect(result).toBe(true);
+      expect(result).toBe(false);
+
+      process.getuid = originalGetuid;
     });
 
     it('書き込み権限がない場合はtrueを返す', () => {
-      // 新しい実装では、sudo権限がない限り常にtrueを返す
+      const originalGetuid = process.getuid;
+      process.getuid = vi.fn().mockReturnValue(1000);
+      mockFs.accessSync.mockImplementation(() => {
+        const err = Object.assign(new Error('Permission denied'), {
+          code: 'EACCES',
+        });
+        throw err;
+      });
+
       const result = permissionChecker.requiresSudo('/etc/hosts');
 
       expect(result).toBe(true);
+
+      process.getuid = originalGetuid;
     });
   });
 
