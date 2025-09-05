@@ -28,13 +28,23 @@ export class PermissionChecker implements IPermissionChecker {
     }
   }
 
-  requiresSudo(_filePath?: string): boolean {
+  requiresSudo(filePath?: string): boolean {
     // sudoで実行中の場合は不要
     if (this.isRunningAsSudo()) {
       return false;
     }
 
-    // デフォルトでhostsファイルへの書き込みはsudoが必要
+    if (filePath) {
+      try {
+        // 指定されたファイルに書き込み権限があるか確認
+        fs.accessSync(filePath, fs.constants.W_OK);
+        return false;
+      } catch (_err) {
+        return true;
+      }
+    }
+
+    // ファイルパスが指定されていない場合はsudoが必要と判断
     return true;
   }
 
