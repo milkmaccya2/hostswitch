@@ -1,0 +1,10 @@
+{
+  "item.label.チュートリアル": {
+    "message": "Tutorial",
+    "description": "Navbar item with label チュートリアル"
+  },
+  "item.label.ブログ": {
+    "message": "Blog",
+    "description": "Navbar item with label ブログ"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "homepage.tagline": {
+    "message": "Simple hosts file switching tool",
+    "description": "The tagline of the site"
+  },
+  "homepage.tutorial.button": {
+    "message": "View Tutorial - 5min ⏱️",
+    "description": "The label for the tutorial button"
+  },
+  "feature.easy.title": {
+    "message": "Easy to Use",
+    "description": "Title for Easy to Use feature"
+  },
+  "feature.easy.description": {
+    "message": "HostSwitch is designed to be intuitive from the command line. It also features an interactive mode navigable with arrow keys.",
+    "description": "Description for Easy to Use feature"
+  },
+  "feature.backup.title": {
+    "message": "Safe Backup",
+    "description": "Title for Safe Backup feature"
+  },
+  "feature.backup.description": {
+    "message": "Automatically backs up your current hosts file before every switch. Restore to the original state anytime if needed.",
+    "description": "Description for Safe Backup feature"
+  },
+  "feature.profiles.title": {
+    "message": "Profile Management",
+    "description": "Title for Profile Management feature"
+  },
+  "feature.profiles.description": {
+    "message": "Save hosts settings as profiles for each environment like 'Local', 'Docker', 'Prod'. Sharing settings with team members is easy.",
+    "description": "Description for Profile Management feature"
+  }
+}
