@@ -5,7 +5,7 @@
 
 A simple CLI tool for switching hosts file profiles
 
-[日本語](README.ja.md)
+[日本語](README.ja.md) | [Documentation (English)](https://milkmaccya2.github.io/hostswitch/en/) | [Documentation (日本語)](https://milkmaccya2.github.io/hostswitch/)
 
 ## Overview
 
