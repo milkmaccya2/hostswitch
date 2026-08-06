@@ -144,11 +144,13 @@ src/
 - **FileSystemAdapter**: File system operations implementation
 - **ChalkLogger**: Console output with colors and formatting
 - **ProcessManager**: External process execution (editor)
+- **PermissionChecker**: sudo detection and re-running the CLI under sudo
 
 #### **Interface Layer** (`interfaces/`)
 - **IFileSystem**: File system abstraction for testing
 - **ILogger**: Logging abstraction
 - **IProcessManager**: Process execution abstraction
+- **IPermissionChecker**: sudo detection abstraction
 - Type definitions for data structures and configurations
 
 ### Dependency Injection
@@ -227,15 +229,12 @@ Build commands:
 
 ## Update Notification Feature
 
-HostSwitch includes automatic update checking using `update-notifier`:
-- **Automatic check**: Runs asynchronously on startup (24-hour cache)
-- **Non-intrusive**: Doesn't block user operations
-- **Disable option**: Set `HOSTSWITCH_NO_UPDATE_CHECK=true` to disable
-- **Implementation**: `UpdateChecker` class in `src/core/UpdateChecker.ts`
-
-## Workflow Reminders
-
-- タスクが終わるごとに@ARCHITECTURE_DIAGRAMS.md を更新する
+HostSwitch checks for a newer published version with `update-notifier`, called directly from `main()` in `src/hostswitch.ts`:
+- **Check**: Runs in a detached child process, so it never blocks an operation. `updateCheckInterval: 0` starts a check on every invocation
+- **Notification timing**: The check writes its result to a config store and the notifier reads that result on the *next* invocation, printing it when the process exits. A version published moments ago is reported one run later
+- **Requires a TTY**: Nothing is printed when stdout is not a TTY, so piping the output hides the notice
+- **Disabled when**: `NO_UPDATE_NOTIFIER` is present in the environment, `NODE_ENV=test`, `--no-update-notifier` is passed, or a CI environment is detected
+- **Suggested command**: `notify({ isGlobal: true })` makes the notice suggest `npm i -g @milkmaccya2/hostswitch`, whichever way the running copy was installed
 
 ## Development Workflow
 
