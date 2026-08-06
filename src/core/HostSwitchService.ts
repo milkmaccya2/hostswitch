@@ -121,6 +121,21 @@ export class HostSwitchService {
     return this.profileManager.profileExists(name);
   }
 
+  // プロファイルの内容が hosts ファイルに反映済みかどうか。
+  // どちらかが読めないときは true を返し、適用を促さない。
+  isProfileApplied(name: string): boolean {
+    const profile = this.profileManager.getProfileContent(name);
+    if (!profile.success || profile.content === undefined) {
+      return true;
+    }
+
+    try {
+      return this.fileSystem.readFileSync(this.config.hostsPath) === profile.content;
+    } catch (_err) {
+      return true;
+    }
+  }
+
   getProfilePath(name: string): string {
     return this.profileManager.getProfilePath(name);
   }

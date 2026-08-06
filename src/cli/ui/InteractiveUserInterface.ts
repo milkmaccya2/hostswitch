@@ -191,14 +191,9 @@ export class InteractiveUserInterface implements IUserInterface {
       return;
     }
 
-    const switchableProfiles = listData.profiles.filter((p) => !p.isCurrent);
-    if (switchableProfiles.length === 0) {
-      this.showMessage('No other profiles available to switch to', 'info');
-      return;
-    }
-
-    const choices: Choice<string>[] = switchableProfiles.map((p) => ({
-      name: p.name,
+    // current も残す。編集した profile を選び直して再適用できるようにする
+    const choices: Choice<string>[] = listData.profiles.map((p) => ({
+      name: p.isCurrent ? `${p.name} (current, re-apply)` : p.name,
       value: p.name,
     }));
 
@@ -241,6 +236,21 @@ export class InteractiveUserInterface implements IUserInterface {
     const profileName = await this.promptSelect('Select profile to edit:', choices);
     const result = await this.facade.editProfile(profileName);
     await this.handleCommandResult(result);
+
+    if (!result.success || !result.requiresApply) {
+      return;
+    }
+
+    const confirmed = await this.promptConfirm(
+      `"${profileName}" is the current profile. Apply to /etc/hosts now?`
+    );
+    if (!confirmed) {
+      this.showMessage(`Run \`hostswitch switch ${profileName}\` to apply.`, 'info');
+      return;
+    }
+
+    const switchResult = await this.facade.switchProfile(profileName);
+    await this.handleCommandResult(switchResult);
   }
 
   private async handleShowProfile(): Promise<void> {

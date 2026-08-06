@@ -134,6 +134,21 @@ describe('User Interface Classes', () => {
           'This operation requires confirmation. Add --force flag to proceed without confirmation.'
         );
       });
+
+      it('should hint the switch command when the edited profile needs applying', async () => {
+        const result: ICommandResult = {
+          success: true,
+          message: 'Profile "nothing" edited successfully',
+          requiresApply: true,
+          profileName: 'nothing',
+        };
+
+        await cliUI.handleCommandResult(result);
+
+        expect(mockLogger.warning).toHaveBeenCalledWith(
+          'Run `hostswitch switch nothing` to apply to /etc/hosts.'
+        );
+      });
     });
   });
 
@@ -189,6 +204,108 @@ describe('User Interface Classes', () => {
             choices,
           },
         ]);
+      });
+    });
+
+    describe('run() - edit', () => {
+      const profiles = [
+        { name: 'nothing', isCurrent: true },
+        { name: 'dev', isCurrent: false },
+      ];
+
+      beforeEach(() => {
+        vi.mocked(mockFacade.getCurrentProfile).mockReturnValue('nothing');
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: { profiles },
+        });
+      });
+
+      it('current プロファイルを編集して未適用なら確認して適用する', async () => {
+        vi.mocked(mockFacade.editProfile).mockResolvedValue({
+          success: true,
+          message: 'Profile "nothing" edited successfully',
+          requiresApply: true,
+          profileName: 'nothing',
+        });
+        vi.mocked(mockFacade.switchProfile).mockResolvedValue({
+          success: true,
+          message: 'Switched to profile "nothing"',
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'edit' })
+          .mockResolvedValueOnce({ selected: 'nothing' })
+          .mockResolvedValueOnce({ confirmed: true });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.switchProfile).toHaveBeenCalledWith('nothing');
+      });
+
+      it('確認で拒否した場合は適用せずswitchコマンドを案内する', async () => {
+        vi.mocked(mockFacade.editProfile).mockResolvedValue({
+          success: true,
+          message: 'Profile "nothing" edited successfully',
+          requiresApply: true,
+          profileName: 'nothing',
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'edit' })
+          .mockResolvedValueOnce({ selected: 'nothing' })
+          .mockResolvedValueOnce({ confirmed: false });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.switchProfile).not.toHaveBeenCalled();
+        expect(mockLogger.info).toHaveBeenCalledWith('Run `hostswitch switch nothing` to apply.');
+      });
+
+      it('requiresApplyが無ければ確認しない', async () => {
+        vi.mocked(mockFacade.editProfile).mockResolvedValue({
+          success: true,
+          message: 'Profile "dev" edited successfully',
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'edit' })
+          .mockResolvedValueOnce({ selected: 'dev' });
+
+        await interactiveUI.run();
+
+        expect(inquirer.prompt).toHaveBeenCalledTimes(2);
+        expect(mockFacade.switchProfile).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('run() - switch', () => {
+      it('切替先の一覧に current を re-apply として残す', async () => {
+        vi.mocked(mockFacade.getCurrentProfile).mockReturnValue('nothing');
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: {
+            profiles: [
+              { name: 'nothing', isCurrent: true },
+              { name: 'dev', isCurrent: false },
+            ],
+          },
+        });
+        vi.mocked(mockFacade.switchProfile).mockResolvedValue({
+          success: true,
+          message: 'Switched to profile "nothing"',
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'switch' })
+          .mockResolvedValueOnce({ selected: 'nothing' });
+
+        await interactiveUI.run();
+
+        const selectCall = vi.mocked(inquirer.prompt).mock.calls[1][0] as Array<{
+          choices: Array<{ name: string; value: string }>;
+        }>;
+        expect(selectCall[0].choices).toEqual([
+          { name: 'nothing (current, re-apply)', value: 'nothing' },
+          { name: 'dev', value: 'dev' },
+        ]);
+        expect(mockFacade.switchProfile).toHaveBeenCalledWith('nothing');
       });
     });
 

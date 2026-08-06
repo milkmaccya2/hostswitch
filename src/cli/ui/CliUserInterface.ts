@@ -116,6 +116,13 @@ export class CliUserInterface implements IUserInterface {
       if (result.message) {
         this.showMessage(result.message, 'success');
       }
+      // CLI モードは確認プロンプトを持たないため、適用は switch に委ねる
+      if (result.requiresApply && result.profileName) {
+        this.showMessage(
+          `Run \`hostswitch switch ${result.profileName}\` to apply to /etc/hosts.`,
+          'warning'
+        );
+      }
     } else {
       this.showMessage(result.message || 'Operation failed', 'error');
       process.exit(1);

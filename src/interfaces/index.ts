@@ -94,6 +94,8 @@ export interface ICommandResult {
   requiresConfirmation?: boolean;
   requiresSudo?: boolean;
   sudoCommand?: string;
+  requiresApply?: boolean;
+  profileName?: string;
 }
 
 export type MessageType = 'info' | 'error' | 'success' | 'warning';
