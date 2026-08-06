@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import chalk from 'chalk';
 import { Command } from 'commander';
 import updateNotifier from 'update-notifier';
 import packageJson from '../package.json';
@@ -118,12 +119,19 @@ function parseCommands() {
 
 // アプリケーション起動
 async function main() {
-  // アップデートチェック
+  // アップデートチェック。
+  // 既定の文言は npm i -g を「実行すべきコマンド」として出すが、mise や volta などで
+  // 入れた場合は効かない。install に使ったツールが何かは判定しないので、例として示す。
+  const updateMessage =
+    `Update available ${chalk.dim('{currentVersion}')}${chalk.reset(' → ')}${chalk.green('{latestVersion}')}\n` +
+    'Update with the tool you used to install hostswitch, e.g.\n' +
+    chalk.cyan('{updateCommand}');
+
   updateNotifier({
     pkg: packageJson,
     updateCheckInterval: 0,
     shouldNotifyInNpmScript: true,
-  }).notify({ isGlobal: true });
+  }).notify({ isGlobal: true, message: updateMessage });
 
   const program = parseCommands();
 

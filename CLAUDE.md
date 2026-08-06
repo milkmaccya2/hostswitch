@@ -234,7 +234,7 @@ HostSwitch checks for a newer published version with `update-notifier`, called d
 - **Notification timing**: The check writes its result to a config store and the notifier reads that result on the *next* invocation, printing it when the process exits. A version published moments ago is reported one run later
 - **Requires a TTY**: Nothing is printed when stdout is not a TTY, so piping the output hides the notice
 - **Disabled when**: `NO_UPDATE_NOTIFIER` is present in the environment, `NODE_ENV=test`, `--no-update-notifier` is passed, or a CI environment is detected
-- **Suggested command**: `notify({ isGlobal: true })` makes the notice suggest `npm i -g @milkmaccya2/hostswitch`, whichever way the running copy was installed
+- **Suggested command**: The install method is not detected, so a custom `notify({ message })` presents `npm i -g @milkmaccya2/hostswitch` as an example rather than as the command to run. `isGlobal: true` is what makes that example the global form
 
 ## Development Workflow
 
