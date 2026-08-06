@@ -39,6 +39,7 @@ describe('Auto-Sudo Functionality', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch my-profile',
+        sudoArgs: ['switch', 'my-profile'],
       };
 
       await cliUI.handleCommandResult(result);
@@ -60,6 +61,7 @@ describe('Auto-Sudo Functionality', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch staging',
+        sudoArgs: ['switch', 'staging'],
       };
 
       await cliUI.handleCommandResult(result);
@@ -82,57 +84,57 @@ describe('Auto-Sudo Functionality', () => {
   });
 
   describe('InteractiveUserInterface Auto-Sudo', () => {
-    it('should extract profile name correctly from various sudo command formats', async () => {
+    it('should take the profile name from sudoArgs', async () => {
       vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
         success: true,
         message: 'Success',
       });
 
-      // Test standard format
-      const result1: ICommandResult = {
+      const result: ICommandResult = {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch production',
+        sudoArgs: ['switch', 'production'],
       };
 
-      await interactiveUI.handleCommandResult(result1);
+      await interactiveUI.handleCommandResult(result);
+
       expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('production');
+    });
 
-      // Test with full path
-      const result2: ICommandResult = {
-        success: false,
-        requiresSudo: true,
-        sudoCommand: 'sudo /usr/local/bin/hostswitch switch development',
-      };
+    it('should not run the profile name through the displayed sudoCommand', async () => {
+      vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+        success: true,
+        message: 'Success',
+      });
 
-      await interactiveUI.handleCommandResult(result2);
-      expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('development');
-
-      // Test with node command
-      const result3: ICommandResult = {
+      // 表示用の文字列は絶対パスでも node 経由でも形が変わるので、判断材料にしない
+      const result: ICommandResult = {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo node /path/to/hostswitch.js switch staging',
+        sudoArgs: ['switch', 'production'],
       };
 
-      await interactiveUI.handleCommandResult(result3);
-      expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('staging');
+      await interactiveUI.handleCommandResult(result);
+
+      expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('production');
     });
 
     it('should not execute sudo for non-switch commands', async () => {
-      const commands = [
-        'sudo hostswitch list',
-        'sudo hostswitch create test',
-        'sudo hostswitch delete test',
-        'sudo hostswitch show test',
-        'sudo hostswitch edit test',
+      const argsList = [
+        ['list'],
+        ['create', 'test'],
+        ['delete', 'test'],
+        ['show', 'test'],
+        ['edit', 'test'],
       ];
 
-      for (const command of commands) {
+      for (const sudoArgs of argsList) {
         const result: ICommandResult = {
           success: false,
           requiresSudo: true,
-          sudoCommand: command,
+          sudoArgs,
         };
 
         await interactiveUI.handleCommandResult(result);
@@ -141,20 +143,14 @@ describe('Auto-Sudo Functionality', () => {
       expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
     });
 
-    it('should handle malformed sudo commands gracefully', async () => {
-      const malformedCommands = [
-        'sudo',
-        'sudo hostswitch',
-        'sudo hostswitch switch',
-        '',
-        'malformed command',
-      ];
+    it('should handle incomplete sudoArgs gracefully', async () => {
+      const argsList: (string[] | undefined)[] = [undefined, [], ['switch'], ['switch', '']];
 
-      for (const command of malformedCommands) {
+      for (const sudoArgs of argsList) {
         const result: ICommandResult = {
           success: false,
           requiresSudo: true,
-          sudoCommand: command,
+          sudoArgs,
         };
 
         await interactiveUI.handleCommandResult(result);
@@ -170,6 +166,7 @@ describe('Auto-Sudo Functionality', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch production',
+        sudoArgs: ['switch', 'production'],
       };
 
       // This should not throw
@@ -186,11 +183,11 @@ describe('Auto-Sudo Functionality', () => {
   });
 
   describe('Edge Cases', () => {
-    it('should handle undefined sudoCommand', async () => {
+    it('should report a missing sudoArgs instead of replaying the current command', async () => {
       const result: ICommandResult = {
         success: false,
         requiresSudo: true,
-        // sudoCommand is undefined
+        // sudoArgs is undefined
       };
 
       await cliUI.handleCommandResult(result);
@@ -199,15 +196,17 @@ describe('Auto-Sudo Functionality', () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         'This operation requires sudo privileges. Rerunning with sudo...'
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
+      expect(mockLogger.error).toHaveBeenCalledWith('No sudo command provided');
+      expect(mockLogger.info).not.toHaveBeenCalledWith('(Skipped in test environment)');
       expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
+      expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
     });
 
-    it('should handle empty sudoCommand', async () => {
+    it('should handle empty sudoArgs', async () => {
       const result: ICommandResult = {
         success: false,
         requiresSudo: true,
-        sudoCommand: '',
+        sudoArgs: [],
       };
 
       await interactiveUI.handleCommandResult(result);

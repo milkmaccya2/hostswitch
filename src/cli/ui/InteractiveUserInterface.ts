@@ -312,23 +312,21 @@ export class InteractiveUserInterface implements IUserInterface {
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges.', 'warning');
 
-    if (result.sudoCommand?.includes('switch')) {
-      // sudo hostswitch switch profile-name の形式から profile-name を抽出
-      const parts = result.sudoCommand.split(' ');
-      const switchIndex = parts.indexOf('switch');
-      if (switchIndex >= 0 && switchIndex + 1 < parts.length) {
-        const profileName = parts[switchIndex + 1];
-        this.showMessage(`Switching to profile "${profileName}" with sudo...`, 'info');
-        try {
-          const sudoResult = await this.facade.switchProfileWithSudo(profileName);
-          await this.handleCommandResult(sudoResult);
-        } catch (error) {
-          this.showMessage(
-            `Failed to execute sudo command: ${error instanceof Error ? error.message : String(error)}`,
-            'error'
-          );
-        }
-      }
+    // 表示用の sudoCommand は形が変わりうるので、実行する操作は sudoArgs だけで決める
+    const [command, profileName] = result.sudoArgs ?? [];
+    if (command !== 'switch' || !profileName) {
+      return;
+    }
+
+    this.showMessage(`Switching to profile "${profileName}" with sudo...`, 'info');
+    try {
+      const sudoResult = await this.facade.switchProfileWithSudo(profileName);
+      await this.handleCommandResult(sudoResult);
+    } catch (error) {
+      this.showMessage(
+        `Failed to execute sudo command: ${error instanceof Error ? error.message : String(error)}`,
+        'error'
+      );
     }
   }
 }

@@ -149,6 +149,7 @@ describe('HostSwitchFacade', () => {
       expect(result.success).toBe(false);
       expect(result.requiresSudo).toBe(true);
       expect(result.sudoCommand).toBe('sudo hostswitch switch staging');
+      expect(result.sudoArgs).toEqual(['switch', 'staging']);
       expect(mockService.switchProfile).not.toHaveBeenCalled();
     });
 
