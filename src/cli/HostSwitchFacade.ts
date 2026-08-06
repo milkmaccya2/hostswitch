@@ -189,7 +189,8 @@ export class HostSwitchFacade {
 
       const profilePath = this.hostSwitchService.getProfilePath(name);
       const isCurrent = this.hostSwitchService.getCurrentProfile() === name;
-      await this.processManager.openEditor('vi', profilePath);
+      const editor = process.env.EDITOR || 'vi';
+      await this.processManager.openEditor(editor, profilePath);
 
       // 編集しただけでは hosts ファイルは変わらないため、current の編集は適用が必要になる
       const requiresApply = isCurrent && !this.hostSwitchService.isProfileApplied(name);

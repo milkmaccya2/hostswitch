@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { HostSwitchService } from '../../core/HostSwitchService';
 import type {
   CreateProfileResult,
@@ -251,7 +251,21 @@ describe('HostSwitchFacade', () => {
   });
 
   describe('editProfile', () => {
-    it('should open editor for profile', async () => {
+    const originalEditor = process.env.EDITOR;
+
+    beforeEach(() => {
+      delete process.env.EDITOR;
+    });
+
+    afterEach(() => {
+      if (originalEditor === undefined) {
+        delete process.env.EDITOR;
+      } else {
+        process.env.EDITOR = originalEditor;
+      }
+    });
+
+    it('should fall back to vi when $EDITOR is not set', async () => {
       vi.mocked(mockService.profileExists).mockReturnValue(true);
       vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
       vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
@@ -260,6 +274,28 @@ describe('HostSwitchFacade', () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Profile "local" edited successfully');
+      expect(mockProcessManager.openEditor).toHaveBeenCalledWith('vi', '/path/to/profile');
+    });
+
+    it('should use $EDITOR when set', async () => {
+      process.env.EDITOR = 'code --wait';
+      vi.mocked(mockService.profileExists).mockReturnValue(true);
+      vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
+      vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
+
+      await facade.editProfile('local');
+
+      expect(mockProcessManager.openEditor).toHaveBeenCalledWith('code --wait', '/path/to/profile');
+    });
+
+    it('should fall back to vi when $EDITOR is empty', async () => {
+      process.env.EDITOR = '';
+      vi.mocked(mockService.profileExists).mockReturnValue(true);
+      vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
+      vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
+
+      await facade.editProfile('local');
+
       expect(mockProcessManager.openEditor).toHaveBeenCalledWith('vi', '/path/to/profile');
     });
 
