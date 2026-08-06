@@ -261,4 +261,32 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(result.requiresSudo).toBeUndefined();
     });
   });
+
+  describe('isProfileApplied()', () => {
+    it('プロファイルの内容がhostsと一致していればtrue', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
+
+      expect(service.isProfileApplied('dev')).toBe(true);
+    });
+
+    it('編集してhostsと差が出たらfalse', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'edited content');
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
+
+      expect(service.isProfileApplied('dev')).toBe(false);
+    });
+
+    it('プロファイルが読めない場合は適用を促さない', () => {
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
+
+      expect(service.isProfileApplied('missing')).toBe(true);
+    });
+
+    it('hostsが読めない場合は適用を促さない', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
+
+      expect(service.isProfileApplied('dev')).toBe(true);
+    });
+  });
 });

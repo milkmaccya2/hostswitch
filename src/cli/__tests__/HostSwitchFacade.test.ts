@@ -25,6 +25,7 @@ describe('HostSwitchFacade', () => {
     getProfilePath: ReturnType<typeof vi.fn>;
     getCurrentProfile: ReturnType<typeof vi.fn>;
     getConfig: ReturnType<typeof vi.fn>;
+    isProfileApplied: ReturnType<typeof vi.fn>;
   };
   let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
@@ -41,6 +42,7 @@ describe('HostSwitchFacade', () => {
       getProfilePath: vi.fn(),
       getCurrentProfile: vi.fn(),
       getConfig: vi.fn().mockReturnValue({ hostsPath: '/etc/hosts' }),
+      isProfileApplied: vi.fn().mockReturnValue(true),
     };
 
     _mockLogger = {
@@ -259,6 +261,44 @@ describe('HostSwitchFacade', () => {
       expect(result.success).toBe(true);
       expect(result.message).toBe('Profile "local" edited successfully');
       expect(mockProcessManager.openEditor).toHaveBeenCalledWith('vi', '/path/to/profile');
+    });
+
+    it('should flag apply when editing the current profile leaves hosts stale', async () => {
+      vi.mocked(mockService.profileExists).mockReturnValue(true);
+      vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
+      vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
+      mockService.getCurrentProfile.mockReturnValue('local');
+      mockService.isProfileApplied.mockReturnValue(false);
+
+      const result = await facade.editProfile('local');
+
+      expect(result.success).toBe(true);
+      expect(result.requiresApply).toBe(true);
+      expect(result.profileName).toBe('local');
+    });
+
+    it('should not flag apply when the current profile is already applied', async () => {
+      vi.mocked(mockService.profileExists).mockReturnValue(true);
+      vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
+      vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
+      mockService.getCurrentProfile.mockReturnValue('local');
+      mockService.isProfileApplied.mockReturnValue(true);
+
+      const result = await facade.editProfile('local');
+
+      expect(result.requiresApply).toBe(false);
+    });
+
+    it('should not read hosts when editing a profile that is not current', async () => {
+      vi.mocked(mockService.profileExists).mockReturnValue(true);
+      vi.mocked(mockService.getProfilePath).mockReturnValue('/path/to/profile');
+      vi.mocked(mockProcessManager.openEditor).mockResolvedValue();
+      mockService.getCurrentProfile.mockReturnValue('staging');
+
+      const result = await facade.editProfile('local');
+
+      expect(result.requiresApply).toBe(false);
+      expect(mockService.isProfileApplied).not.toHaveBeenCalled();
     });
 
     it('should handle editor errors', async () => {

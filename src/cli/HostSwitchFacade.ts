@@ -188,11 +188,17 @@ export class HostSwitchFacade {
       }
 
       const profilePath = this.hostSwitchService.getProfilePath(name);
+      const isCurrent = this.hostSwitchService.getCurrentProfile() === name;
       await this.processManager.openEditor('vi', profilePath);
+
+      // 編集しただけでは hosts ファイルは変わらないため、current の編集は適用が必要になる
+      const requiresApply = isCurrent && !this.hostSwitchService.isProfileApplied(name);
 
       return {
         success: true,
         message: `Profile "${name}" edited successfully`,
+        requiresApply,
+        profileName: name,
       };
     } catch (error) {
       return {
