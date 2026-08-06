@@ -77,13 +77,7 @@ export class PermissionChecker implements IPermissionChecker {
     const executablePath = process.argv[0]; // node path
     const scriptPath = process.argv[1]; // hostswitch.js path
 
-    // npm経由で実行されている場合の検出
-    if (scriptPath.includes('npm') || process.env.npm_execpath) {
-      // npm start -- switch profile -> sudo npm start -- switch profile
-      return ['sudo', 'npm', 'start', '--', ...args];
-    } else {
-      // direct execution -> sudo node hostswitch.js switch profile
-      return ['sudo', executablePath, scriptPath, ...args];
-    }
+    // npm run 経由でも argv[1] は実行中のスクリプトを指すので、常にそれを再実行する
+    return ['sudo', executablePath, scriptPath, ...args];
   }
 }

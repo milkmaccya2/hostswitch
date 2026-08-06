@@ -70,7 +70,6 @@ export interface CreateProfileResult {
 export interface ProfileInfo {
   name: string;
   isCurrent: boolean;
-  isActive?: boolean;
 }
 
 export interface DeleteResult {
