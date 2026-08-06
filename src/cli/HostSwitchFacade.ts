@@ -69,6 +69,7 @@ export class HostSwitchFacade {
           success: false,
           requiresSudo: true,
           sudoCommand: `sudo hostswitch switch ${name}`,
+          sudoArgs: ['switch', name],
           message: 'This operation requires sudo privileges',
         };
       }

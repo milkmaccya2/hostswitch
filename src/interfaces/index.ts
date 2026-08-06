@@ -93,7 +93,10 @@ export interface ICommandResult {
   data?: unknown;
   requiresConfirmation?: boolean;
   requiresSudo?: boolean;
+  // 表示用の文字列。sudo で何を実行するかの判断には使わない
   sudoCommand?: string;
+  // sudo で再実行する hostswitch の引数
+  sudoArgs?: string[];
   requiresApply?: boolean;
   profileName?: string;
 }

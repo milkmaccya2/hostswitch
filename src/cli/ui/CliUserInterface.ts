@@ -66,17 +66,19 @@ export class CliUserInterface implements IUserInterface {
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
 
+    // 何を sudo で実行するかは呼び出し側が明示する。ここで現在の引数を流用すると
+    // hosts の書き換えを伴わない操作までそのまま root で再実行されてしまう
+    if (!result.sudoArgs) {
+      this.showMessage('No sudo command provided', 'error');
+      return;
+    }
+
     if (this.isTestEnvironment()) {
       this.showMessage('(Skipped in test environment)', 'info');
       return;
     }
 
-    if (!result.sudoCommand) {
-      this.showMessage('No sudo command provided', 'error');
-      return;
-    }
-
-    await this.executeSudo();
+    await this.executeSudo(result.sudoArgs);
   }
 
   private isTestEnvironment(): boolean {
@@ -87,9 +89,9 @@ export class CliUserInterface implements IUserInterface {
     );
   }
 
-  private async executeSudo(): Promise<void> {
+  private async executeSudo(args: string[]): Promise<void> {
     // シェルを介さず引数を配列で渡す（プロファイル名に空白等が入っても壊れない）
-    const result = spawnSync('sudo', [process.argv[0], process.argv[1], ...process.argv.slice(2)], {
+    const result = spawnSync('sudo', [process.argv[0], process.argv[1], ...args], {
       stdio: 'inherit',
     });
 

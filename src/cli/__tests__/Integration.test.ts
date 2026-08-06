@@ -155,6 +155,7 @@ describe('Integration Tests', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch staging',
+        sudoArgs: ['switch', 'staging'],
         message: 'This operation requires sudo privileges.',
       });
 
@@ -172,6 +173,7 @@ describe('Integration Tests', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch production',
+        sudoArgs: ['switch', 'production'],
         message: 'This operation requires sudo privileges.',
       });
 
@@ -195,6 +197,7 @@ describe('Integration Tests', () => {
         success: false,
         requiresSudo: true,
         sudoCommand: 'sudo hostswitch switch staging',
+        sudoArgs: ['switch', 'staging'],
         message: 'This operation requires sudo privileges.',
       });
 
