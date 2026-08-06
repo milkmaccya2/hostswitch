@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import type {
   Choice,
   ICommandResult,
@@ -87,15 +88,17 @@ export class CliUserInterface implements IUserInterface {
   }
 
   private async executeSudo(): Promise<void> {
-    try {
-      const { execSync } = require('node:child_process');
-      const args = process.argv.slice(2).join(' ');
-      execSync(`sudo ${process.argv[0]} ${process.argv[1]} ${args}`, { stdio: 'inherit' });
-      process.exit(0);
-    } catch (_error) {
+    // シェルを介さず引数を配列で渡す（プロファイル名に空白等が入っても壊れない）
+    const result = spawnSync('sudo', [process.argv[0], process.argv[1], ...process.argv.slice(2)], {
+      stdio: 'inherit',
+    });
+
+    if (result.error || result.status !== 0) {
       this.showMessage('Failed to execute with sudo', 'error');
       process.exit(1);
     }
+
+    process.exit(0);
   }
 
   private handleConfirmationRequired(): void {

@@ -212,11 +212,11 @@ describe('PermissionChecker', () => {
       expect(result.message).toBe('Failed to execute sudo: Command not found');
     });
 
-    it('npm経由での実行を検出してsudo npmコマンドを構築', async () => {
-      // npm経由の実行をシミュレート
+    it('npm script経由(npm_execpath あり)でも実行中のスクリプトを再実行する', async () => {
+      // npm run 経由でも argv[1] は dist/hostswitch.js なのでそのまま再実行できる
       const originalArgv = process.argv;
       const originalEnv = process.env.npm_execpath;
-      process.argv = ['/usr/bin/node', '/path/to/npm/script'];
+      process.argv = ['/usr/bin/node', '/path/to/dist/hostswitch.js'];
       process.env.npm_execpath = '/usr/bin/npm';
 
       const mockChild = {
@@ -232,7 +232,7 @@ describe('PermissionChecker', () => {
 
       expect(mockSpawn).toHaveBeenCalledWith(
         'sudo',
-        ['npm', 'start', '--', 'switch', 'dev'],
+        ['/usr/bin/node', '/path/to/dist/hostswitch.js', 'switch', 'dev'],
         expect.any(Object)
       );
 
@@ -243,6 +243,35 @@ describe('PermissionChecker', () => {
       } else {
         delete process.env.npm_execpath;
       }
+    });
+
+    it('インストールパスに npm を含んでも実行中のスクリプトを再実行する', async () => {
+      // mise の install 先は npm-<pkg> を含むため、パスの部分一致で npm 起動と誤判定されていた
+      const originalArgv = process.argv;
+      const misePath =
+        '/home/user/.local/share/mise/installs/npm-milkmaccya2-hostswitch/1.2.10/bin/hostswitch';
+      process.argv = ['/usr/bin/node', misePath];
+      delete process.env.npm_execpath;
+
+      const mockChild = {
+        on: vi.fn((event: string, callback: (code: number | null) => void) => {
+          if (event === 'exit') {
+            setTimeout(() => callback(0), 10);
+          }
+        }),
+      } as unknown as ReturnType<typeof spawn>;
+      mockSpawn.mockReturnValue(mockChild);
+
+      await permissionChecker.rerunWithSudo(['switch', 'dev']);
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'sudo',
+        ['/usr/bin/node', misePath, 'switch', 'dev'],
+        expect.any(Object)
+      );
+
+      // 復元
+      process.argv = originalArgv;
     });
 
     it('直接実行の場合はsudo nodeコマンドを構築', async () => {

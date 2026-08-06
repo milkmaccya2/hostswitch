@@ -170,7 +170,7 @@ export class InteractiveUserInterface implements IUserInterface {
       } else {
         this.showMessage('Available profiles:', 'info');
         for (const profile of profiles) {
-          const status = profile.isActive ? ' (current)' : '';
+          const status = profile.isCurrent ? ' (current)' : '';
           this.showMessage(`  ${profile.name}${status}`, 'info');
         }
       }
@@ -191,7 +191,7 @@ export class InteractiveUserInterface implements IUserInterface {
       return;
     }
 
-    const switchableProfiles = listData.profiles.filter((p) => !p.isActive);
+    const switchableProfiles = listData.profiles.filter((p) => !p.isCurrent);
     if (switchableProfiles.length === 0) {
       this.showMessage('No other profiles available to switch to', 'info');
       return;
