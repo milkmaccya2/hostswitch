@@ -3,38 +3,34 @@ import * as fs from 'fs-extra';
 import type { IPermissionChecker, SudoResult } from '../interfaces';
 
 export class PermissionChecker implements IPermissionChecker {
+  /**
+   * 書き込み可否を問い合わせるだけで、対象ファイルには一切触れない。
+   */
   async canWriteToFile(filePath: string): Promise<boolean> {
     try {
-      // copySync操作に必要な権限をテストする
-      // 一時的なバックアップファイルでcopySync操作をシミュレート
-      const tempPath = `${filePath}.hostswitch-test`;
-
-      // 元ファイルの内容を読み取り
-      const originalContent = await fs.readFile(filePath, 'utf8');
-
-      // 一時ファイルに書き込み
-      await fs.writeFile(tempPath, originalContent);
-
-      // copySync操作をテスト（実際にunlink/copyを実行）
-      await fs.copy(tempPath, filePath, { overwrite: true });
-
-      // テスト用一時ファイルを削除
-      await fs.unlink(tempPath);
-
+      await fs.access(filePath, fs.constants.W_OK);
       return true;
     } catch (_error) {
-      // EACCES (Permission denied) またはその他のエラーの場合はfalse
       return false;
     }
   }
 
-  requiresSudo(_filePath?: string): boolean {
-    // sudoで実行中の場合は不要
+  requiresSudo(filePath?: string): boolean {
+    // rootで実行中なら昇格は不要
     if (this.isRunningAsSudo()) {
       return false;
     }
 
-    // デフォルトでhostsファイルへの書き込みはsudoが必要
+    // 対象が分かっていて、かつ既に書けるなら昇格を求めない
+    if (filePath) {
+      try {
+        fs.accessSync(filePath, fs.constants.W_OK);
+        return false;
+      } catch (_error) {
+        return true;
+      }
+    }
+
     return true;
   }
 
@@ -44,8 +40,10 @@ export class PermissionChecker implements IPermissionChecker {
   }
 
   isRunningAsSudo(): boolean {
-    // process.getuid()が0（root）の場合、またはSUDO_USER環境変数が設定されている場合
-    return process.getuid?.() === 0 || process.env.SUDO_USER !== undefined;
+    // 実効ユーザIDだけで判定する。SUDO_USER は `sudo -s` 後のシェルから
+    // 起動した非特権プロセスにも引き継がれるため、昇格済みの証拠にならない。
+    const euid = process.geteuid?.() ?? process.getuid?.();
+    return euid === 0;
   }
 
   async rerunWithSudo(args: string[]): Promise<SudoResult> {
@@ -77,13 +75,14 @@ export class PermissionChecker implements IPermissionChecker {
     const executablePath = process.argv[0]; // node path
     const scriptPath = process.argv[1]; // hostswitch.js path
 
-    // npm経由で実行されている場合の検出
-    if (scriptPath.includes('npm') || process.env.npm_execpath) {
+    // npm run 経由かどうかは npm_lifecycle_event の有無で判断する。
+    // scriptPath.includes('npm') はパスに "npm" を含むだけで誤検出する。
+    if (process.env.npm_lifecycle_event) {
       // npm start -- switch profile -> sudo npm start -- switch profile
       return ['sudo', 'npm', 'start', '--', ...args];
-    } else {
-      // direct execution -> sudo node hostswitch.js switch profile
-      return ['sudo', executablePath, scriptPath, ...args];
     }
+
+    // direct execution -> sudo node hostswitch.js switch profile
+    return ['sudo', executablePath, scriptPath, ...args];
   }
 }
