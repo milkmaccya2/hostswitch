@@ -1,0 +1,62 @@
+name: Bug report
+description: Report a bug so it can be reproduced and fixed.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to report this.
+  - type: input
+    id: os
+    attributes:
+      label: Operating system and version
+      description: Include the OS and version, since the hosts path and elevation flow are OS-dependent.
+      placeholder: "macOS 14.5 / Ubuntu 24.04 / Windows 11"
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Node.js and HostSwitch versions
+      description: Run `node --version` and `hostswitch --version`.
+      placeholder: "Node.js 22.14.0 / hostswitch 1.2.13"
+    validations:
+      required: true
+  - type: input
+    id: install
+    attributes:
+      label: Installation method
+      description: npm global install, npm link, or source.
+      placeholder: "npm install -g"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command and sudo context
+      description: Paste the exact command and whether it ran with or without sudo/admin.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: state
+    attributes:
+      label: Current profile state (optional)
+      description: If safe to share, paste `~/.hostswitch/current.json` with sensitive values removed.
+      render: json
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      render: shell

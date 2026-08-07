@@ -320,4 +320,8 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-Bug reports and feature requests are welcome at [GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, code style, and the PR workflow. Bug reports and feature requests are welcome at [GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues).
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for supported versions and how to report vulnerabilities through GitHub Private Vulnerability Reporting.

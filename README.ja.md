@@ -342,4 +342,8 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 ## 貢献
 
-バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。
+セットアップ、テスト、コードスタイル、PRの流れは[CONTRIBUTING.md](CONTRIBUTING.md)を参照してください。バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。
+
+## セキュリティ
+
+サポート対象バージョンと脆弱性の報告方法は[SECURITY.md](SECURITY.md)を参照してください。GitHub Private Vulnerability Reportingを利用してください。
