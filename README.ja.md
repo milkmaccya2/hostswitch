@@ -343,3 +343,8 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 ## 貢献
 
 バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。
+開発環境のセットアップ手順やテスト方針は[CONTRIBUTING.md](CONTRIBUTING.md)（英語）を参照してください。
+
+## セキュリティ
+
+セキュリティ上の問題を見つけた場合は、公開Issueではなく[SECURITY.md](SECURITY.md)（英語）の手順に従って報告してください。
