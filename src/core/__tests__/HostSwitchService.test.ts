@@ -171,7 +171,7 @@ describe('HostSwitchService - 統合テスト', () => {
       mocks.mockFileSystem.copySync = originalCopySync;
     });
 
-    it('バックアップ失敗後もプロファイル切り替えは継続', async () => {
+    it('バックアップに失敗した場合は切り替えを中断しhostsを書き換えない', async () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original content');
 
@@ -188,12 +188,37 @@ describe('HostSwitchService - 統合テスト', () => {
 
       const result = await service.switchProfile('dev');
 
-      // バックアップは失敗したが、切り替えは成功
-      expect(result.success).toBe(true);
-      expect(result.backupPath).toBeUndefined();
-      expect(service.getCurrentProfile()).toBe('dev');
+      // 退避できないまま hosts を触らない
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('could not back up');
+      expect(mocks.mockFileSystem.getFile(mocks.config.hostsPath)).toBe('original content');
+      expect(service.getCurrentProfile()).toBeNull();
 
       mocks.mockFileSystem.copySync = originalCopySync;
+    });
+
+    it('切り替え中に失敗してもhostsが中途半端な内容にならない', async () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original content');
+
+      // 一時ファイルからhostsへの rename で失敗させる
+      const originalRenameSync = mocks.mockFileSystem.renameSync;
+      mocks.mockFileSystem.renameSync = () => {
+        throw new Error('Rename failed');
+      };
+
+      const result = await service.switchProfile('dev');
+
+      expect(result.success).toBe(false);
+      expect(mocks.mockFileSystem.getFile(mocks.config.hostsPath)).toBe('original content');
+
+      // 一時ファイルを残さない
+      const leftovers = mocks.mockFileSystem
+        .getCalls('unlinkSync')
+        .map((call) => call.args[0] as string);
+      expect(leftovers.some((p) => p.includes('.hostswitch-'))).toBe(true);
+
+      mocks.mockFileSystem.renameSync = originalRenameSync;
     });
   });
 

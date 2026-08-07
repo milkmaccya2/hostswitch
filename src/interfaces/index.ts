@@ -10,6 +10,7 @@ export interface IFileSystem {
   readFileSync(path: string): string;
   writeFileSync(path: string, content: string): void;
   copySync(src: string, dest: string): void;
+  renameSync(src: string, dest: string): void;
   unlinkSync(path: string): void;
   existsSync(path: string): boolean;
   ensureDirSync(path: string): void;
@@ -60,6 +61,15 @@ export interface SwitchResult {
   message?: string;
   backupPath?: string;
   requiresSudo?: boolean;
+}
+
+export interface BackupResult {
+  success: boolean;
+  /** 退避先。skipped の場合は無い */
+  path?: string;
+  /** hostsファイルが存在せず、退避するものが無かった */
+  skipped?: boolean;
+  message?: string;
 }
 
 export interface CreateProfileResult {
