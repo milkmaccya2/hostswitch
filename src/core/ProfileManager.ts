@@ -5,6 +5,8 @@ import type {
   ProfileInfo,
 } from '../interfaces';
 
+const PROFILE_EXT = '.hosts';
+
 export class ProfileManager {
   constructor(
     private fileSystem: IFileSystem,
@@ -14,8 +16,8 @@ export class ProfileManager {
   getProfiles(currentProfile: string | null): ProfileInfo[] {
     const profiles = this.fileSystem
       .readdirSync(this.config.profilesDir)
-      .filter((file) => file.endsWith('.hosts'))
-      .map((file) => file.replace('.hosts', ''));
+      .filter((file) => file.endsWith(PROFILE_EXT))
+      .map((file) => file.slice(0, -PROFILE_EXT.length));
 
     return profiles.map((name) => ({
       name,
@@ -123,7 +125,7 @@ export class ProfileManager {
   }
 
   getProfilePath(name: string): string {
-    return `${this.config.profilesDir}/${name}.hosts`;
+    return `${this.config.profilesDir}/${name}${PROFILE_EXT}`;
   }
 
   private getDefaultHostsContent(): string {

@@ -42,6 +42,15 @@ describe('ProfileManager', () => {
       expect(stagingProfile?.isCurrent).toBe(false);
     });
 
+    it('名前の途中に.hostsを含むファイルでも末尾の拡張子だけを除去する', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/my.hosts.local.hosts`, 'content');
+
+      const result = profileManager.getProfiles(null);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('my.hosts.local');
+    });
+
     it('.hostsファイル以外は無視される', () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'content');
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/readme.txt`, 'readme');
