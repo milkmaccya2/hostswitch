@@ -5,6 +5,7 @@ import { PermissionChecker } from '../PermissionChecker';
 vi.mock('child_process');
 vi.mock('fs-extra', () => ({
   access: vi.fn(),
+  accessSync: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   copy: vi.fn(),
@@ -35,119 +36,105 @@ describe('PermissionChecker', () => {
   });
 
   describe('canWriteToFile()', () => {
-    it('copySync操作が成功する場合はtrueを返す', async () => {
-      // 全ての操作が成功するようにモック設定
-      mockFs.readFile.mockResolvedValue('test content');
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.copy.mockResolvedValue(undefined);
-      mockFs.unlink.mockResolvedValue(undefined);
+    it('書き込み可能な場合はtrueを返す', async () => {
+      mockFs.access.mockResolvedValue(undefined);
 
       const result = await permissionChecker.canWriteToFile('/test/file');
 
       expect(result).toBe(true);
-      expect(mockFs.readFile).toHaveBeenCalledWith('/test/file', 'utf8');
-      expect(mockFs.writeFile).toHaveBeenCalledWith('/test/file.hostswitch-test', 'test content');
-      expect(mockFs.copy).toHaveBeenCalledWith('/test/file.hostswitch-test', '/test/file', {
-        overwrite: true,
-      });
-      expect(mockFs.unlink).toHaveBeenCalledWith('/test/file.hostswitch-test');
+      expect(mockFs.access).toHaveBeenCalledWith('/test/file', mockFs.constants.W_OK);
     });
 
-    it('copySync操作でEACCESエラーが発生した場合はfalseを返す', async () => {
-      mockFs.readFile.mockResolvedValue('test content');
-      mockFs.writeFile.mockResolvedValue(undefined);
-      mockFs.copy.mockRejectedValue(
-        Object.assign(new Error('Permission denied'), { code: 'EACCES' })
-      );
+    it('書き込み不可の場合はfalseを返す', async () => {
+      mockFs.access.mockRejectedValue(Object.assign(new Error('EACCES'), { code: 'EACCES' }));
 
       const result = await permissionChecker.canWriteToFile('/test/file');
 
       expect(result).toBe(false);
     });
 
-    it('readFileでエラーが発生した場合はfalseを返す', async () => {
-      mockFs.readFile.mockRejectedValue(new Error('File not found'));
+    it('対象ファイルへの書き込みを一切行わない', async () => {
+      mockFs.access.mockResolvedValue(undefined);
 
-      const result = await permissionChecker.canWriteToFile('/test/file');
+      await permissionChecker.canWriteToFile('/etc/hosts');
 
-      expect(result).toBe(false);
+      expect(mockFs.writeFile).not.toHaveBeenCalled();
+      expect(mockFs.copy).not.toHaveBeenCalled();
+      expect(mockFs.unlink).not.toHaveBeenCalled();
     });
   });
 
   describe('requiresSudo()', () => {
-    it('sudoで実行中の場合は書き込み権限に関係なくfalseを返す', () => {
-      // process.getuid()をモック（root権限をシミュレート）
-      const originalGetuid = process.getuid;
-      process.getuid = vi.fn().mockReturnValue(0);
+    const withEuid = (uid: number, fn: () => void) => {
+      const original = process.geteuid;
+      process.geteuid = () => uid;
+      try {
+        fn();
+      } finally {
+        process.geteuid = original;
+      }
+    };
 
-      const result = permissionChecker.requiresSudo('/etc/hosts');
-
-      expect(result).toBe(false);
-
-      // 復元
-      process.getuid = originalGetuid;
+    it('root実行中は書き込み権限に関係なくfalseを返す', () => {
+      withEuid(0, () => {
+        expect(permissionChecker.requiresSudo('/etc/hosts')).toBe(false);
+      });
     });
 
-    it('書き込み権限がある場合はfalseを返す', () => {
-      // 新しい実装では、sudo権限がない限り常にtrueを返すように変更
-      const result = permissionChecker.requiresSudo('/test/file');
-
-      expect(result).toBe(true);
+    it('非rootでも対象に書き込めるならfalseを返す', () => {
+      mockFs.accessSync.mockReturnValue(undefined);
+      withEuid(1000, () => {
+        expect(permissionChecker.requiresSudo('/etc/hosts')).toBe(false);
+      });
     });
 
-    it('書き込み権限がない場合はtrueを返す', () => {
-      // 新しい実装では、sudo権限がない限り常にtrueを返す
-      const result = permissionChecker.requiresSudo('/etc/hosts');
+    it('非rootで書き込めない場合はtrueを返す', () => {
+      mockFs.accessSync.mockImplementation(() => {
+        throw new Error('EACCES');
+      });
+      withEuid(1000, () => {
+        expect(permissionChecker.requiresSudo('/etc/hosts')).toBe(true);
+      });
+    });
 
-      expect(result).toBe(true);
+    it('対象が指定されていない場合は非rootならtrueを返す', () => {
+      withEuid(1000, () => {
+        expect(permissionChecker.requiresSudo()).toBe(true);
+      });
     });
   });
 
   describe('isRunningAsSudo()', () => {
-    it('process.getuidが0の場合はtrueを返す', () => {
-      const originalGetuid = process.getuid;
-      process.getuid = vi.fn().mockReturnValue(0);
+    const withEuid = (uid: number, fn: () => void) => {
+      const original = process.geteuid;
+      process.geteuid = () => uid;
+      try {
+        fn();
+      } finally {
+        process.geteuid = original;
+      }
+    };
 
-      const result = permissionChecker.isRunningAsSudo();
-
-      expect(result).toBe(true);
-
-      // 復元
-      process.getuid = originalGetuid;
+    it('実効UIDが0の場合はtrueを返す', () => {
+      withEuid(0, () => {
+        expect(permissionChecker.isRunningAsSudo()).toBe(true);
+      });
     });
 
-    it('SUDO_USER環境変数が設定されている場合はtrueを返す', () => {
+    it('SUDO_USERだけが設定されていてもfalseを返す', () => {
+      // `sudo -s` 後のシェルから起動した非特権プロセスにも SUDO_USER は
+      // 引き継がれるため、昇格済みの証拠として使ってはいけない
       process.env.SUDO_USER = 'testuser';
-
-      const result = permissionChecker.isRunningAsSudo();
-
-      expect(result).toBe(true);
+      withEuid(1000, () => {
+        expect(permissionChecker.isRunningAsSudo()).toBe(false);
+      });
     });
 
-    it('どちらの条件も満たさない場合はfalseを返す', () => {
-      const originalGetuid = process.getuid;
-      process.getuid = vi.fn().mockReturnValue(1000);
+    it('非rootかつSUDO_USERなしの場合はfalseを返す', () => {
       delete process.env.SUDO_USER;
-
-      const result = permissionChecker.isRunningAsSudo();
-
-      expect(result).toBe(false);
-
-      // 復元
-      process.getuid = originalGetuid;
-    });
-
-    it('process.getuidが利用できない環境ではSUDO_USER環境変数のみで判定', () => {
-      const originalGetuid = process.getuid;
-      delete (process as NodeJS.Process).getuid;
-      delete process.env.SUDO_USER;
-
-      const result = permissionChecker.isRunningAsSudo();
-
-      expect(result).toBe(false);
-
-      // 復元
-      process.getuid = originalGetuid;
+      withEuid(1000, () => {
+        expect(permissionChecker.isRunningAsSudo()).toBe(false);
+      });
     });
   });
 
