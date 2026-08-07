@@ -1,0 +1,92 @@
+# Contributing to HostSwitch
+
+Thanks for considering a contribution! This document covers the basics for
+human contributors. If you're an AI coding agent working in this repo, see
+[CLAUDE.md](CLAUDE.md) for more detailed architecture and workflow notes.
+
+Found a security issue instead? Please see [SECURITY.md](SECURITY.md) rather
+than opening a public issue or PR.
+
+## Getting Started
+
+```bash
+# Clone your fork
+git clone https://github.com/<you>/hostswitch.git
+cd hostswitch
+
+# Install dependencies
+npm install
+
+# Run the CLI directly against TypeScript source, without building
+npm run dev -- list
+
+# Or build once and run the compiled output
+npm run build
+npm start -- list
+```
+
+While iterating, `npm run build:watch` recompiles on save.
+
+## Development Flow
+
+1. Create a branch off `main` for your change.
+2. Write or update tests first where practical (see [Testing](#testing)).
+3. Make your change.
+4. Run `npm run check` before opening a PR — this runs linting, format
+   checking, and the full test suite, and is the same gate CI enforces.
+5. Open a PR using the provided template.
+
+## Testing
+
+The project follows t-wada-style TDD: write a failing test, make it pass
+with minimal code, then refactor with the test still green.
+
+- Core business logic (`ProfileManager`, `CurrentProfileManager`,
+  `BackupManager`, `HostSwitchService`) lives under `src/core/` and **must**
+  have unit test coverage in `src/core/__tests__/`.
+- All external dependencies (file system, logging, process execution) are
+  injected via interfaces, so core logic can be tested without touching the
+  real file system — use the mocks in `src/__mocks__/` rather than the real
+  `IFileSystem`/`IProcessManager` implementations.
+- Prefer testing individual managers directly over exercising the same
+  logic indirectly through `HostSwitchService`; reserve
+  `HostSwitchService` tests for integration/coordination scenarios.
+
+```bash
+npm test               # watch mode
+npm run test:run       # single run
+npm run test:coverage  # coverage report
+```
+
+## Code Style
+
+Formatting and linting are enforced by [Biome](https://biomejs.dev/):
+2-space indentation, single quotes, semicolons, 100-character line width.
+
+```bash
+npm run lint:fix   # auto-fix lint + formatting issues
+npm run format     # format only
+```
+
+## Manual Testing Warning
+
+`hostswitch switch` (and `use`) actually overwrite your system hosts file
+(`/etc/hosts` on macOS/Linux, `C:\Windows\System32\drivers\etc\hosts` on
+Windows) and require sudo/administrator privileges to do so.
+
+**Before manually testing `switch`, back up your current hosts file**, e.g.:
+
+```bash
+sudo cp /etc/hosts /etc/hosts.bak
+```
+
+hostswitch does create its own automatic backups under
+`~/.hostswitch/backups/`, but taking your own backup first is cheap
+insurance while you're testing changes to the switching logic itself.
+
+## Pull Requests
+
+- Keep PRs focused on a single change where possible.
+- Make sure `npm run check` passes.
+- Update relevant documentation (README, docs site under `website/`, etc.)
+  if behavior changes.
