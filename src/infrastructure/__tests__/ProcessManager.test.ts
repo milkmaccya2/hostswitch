@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessManager } from '../ProcessManager';
 
 vi.mock('child_process');
@@ -14,20 +14,79 @@ describe('ProcessManager', () => {
   });
 
   describe('executeEditor()', () => {
+    const originalPlatform = process.platform;
+
+    const setPlatform = (value: string) => {
+      Object.defineProperty(process, 'platform', { value, writable: true });
+    };
+
+    afterEach(() => {
+      Object.defineProperty(process, 'platform', { value: originalPlatform, writable: true });
+    });
+
     it('エディタを正常に実行', async () => {
+      setPlatform('darwin');
       mockExecSync.mockReturnValue(Buffer.from(''));
 
       await manager.executeEditor('vi', '/test/file.txt');
 
-      expect(mockExecSync).toHaveBeenCalledWith('vi /test/file.txt', { stdio: 'inherit' });
+      expect(mockExecSync).toHaveBeenCalledWith("vi '/test/file.txt'", { stdio: 'inherit' });
     });
 
     it('複数の引数を持つエディタコマンドを実行', async () => {
+      setPlatform('darwin');
       mockExecSync.mockReturnValue(Buffer.from(''));
 
       await manager.executeEditor('code --wait', '/test/file.txt');
 
-      expect(mockExecSync).toHaveBeenCalledWith('code --wait /test/file.txt', { stdio: 'inherit' });
+      expect(mockExecSync).toHaveBeenCalledWith("code --wait '/test/file.txt'", {
+        stdio: 'inherit',
+      });
+    });
+
+    it('空白を含むパスでも1つの引数として渡す', async () => {
+      setPlatform('darwin');
+      mockExecSync.mockReturnValue(Buffer.from(''));
+
+      await manager.executeEditor('vi', '/Users/my name/.hostswitch/profiles/dev.hosts');
+
+      expect(mockExecSync).toHaveBeenCalledWith(
+        "vi '/Users/my name/.hostswitch/profiles/dev.hosts'",
+        { stdio: 'inherit' }
+      );
+    });
+
+    it('シングルクォートを含むパスをエスケープする', async () => {
+      setPlatform('darwin');
+      mockExecSync.mockReturnValue(Buffer.from(''));
+
+      await manager.executeEditor('vi', "/Users/o'brien/dev.hosts");
+
+      expect(mockExecSync).toHaveBeenCalledWith("vi '/Users/o'\\''brien/dev.hosts'", {
+        stdio: 'inherit',
+      });
+    });
+
+    it('シェルが展開する文字を含むパスをそのまま渡す', async () => {
+      setPlatform('darwin');
+      mockExecSync.mockReturnValue(Buffer.from(''));
+
+      await manager.executeEditor('vi', '/Users/$USER/dev.hosts');
+
+      expect(mockExecSync).toHaveBeenCalledWith("vi '/Users/$USER/dev.hosts'", {
+        stdio: 'inherit',
+      });
+    });
+
+    it('Windowsではダブルクォートで囲む', async () => {
+      setPlatform('win32');
+      mockExecSync.mockReturnValue(Buffer.from(''));
+
+      await manager.executeEditor('notepad', 'C:\\Users\\my name\\dev.hosts');
+
+      expect(mockExecSync).toHaveBeenCalledWith('notepad "C:\\Users\\my name\\dev.hosts"', {
+        stdio: 'inherit',
+      });
     });
 
     it('エディタ実行エラーを適切に処理', async () => {
