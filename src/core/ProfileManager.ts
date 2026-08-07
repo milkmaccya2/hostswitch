@@ -1,3 +1,4 @@
+import * as path from 'node:path';
 import type {
   CreateProfileResult,
   HostSwitchConfig,
@@ -5,17 +6,40 @@ import type {
   ProfileInfo,
 } from '../interfaces';
 
+const PROFILE_EXT = '.hosts';
+
+/**
+ * プロファイル名として許可する文字。ここがアプリ全体で唯一の定義。
+ * パス区切り文字とドットを弾くことで、プロファイルディレクトリ外への
+ * 参照を成立させない。
+ */
+const PROFILE_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+export const INVALID_PROFILE_NAME_MESSAGE =
+  'Invalid profile name. Use only letters, numbers, hyphens, and underscores';
+
+export class InvalidProfileNameError extends Error {
+  constructor(name: string) {
+    super(`${INVALID_PROFILE_NAME_MESSAGE} (got '${name}').`);
+    this.name = 'InvalidProfileNameError';
+  }
+}
+
 export class ProfileManager {
   constructor(
     private fileSystem: IFileSystem,
     private config: HostSwitchConfig
   ) {}
 
+  isValidProfileName(name: string): boolean {
+    return typeof name === 'string' && PROFILE_NAME_PATTERN.test(name);
+  }
+
   getProfiles(currentProfile: string | null): ProfileInfo[] {
     const profiles = this.fileSystem
       .readdirSync(this.config.profilesDir)
-      .filter((file) => file.endsWith('.hosts'))
-      .map((file) => file.replace('.hosts', ''));
+      .filter((file) => file.endsWith(PROFILE_EXT))
+      .map((file) => file.slice(0, -PROFILE_EXT.length));
 
     return profiles.map((name) => ({
       name,
@@ -24,6 +48,10 @@ export class ProfileManager {
   }
 
   createProfile(name: string, fromCurrent: boolean = false): CreateProfileResult {
+    if (!this.isValidProfileName(name)) {
+      return { success: false, message: INVALID_PROFILE_NAME_MESSAGE };
+    }
+
     const profilePath = this.getProfilePath(name);
 
     if (this.fileSystem.existsSync(profilePath)) {
@@ -61,6 +89,10 @@ export class ProfileManager {
     name: string,
     currentProfile: string | null
   ): { success: boolean; message: string } {
+    if (!this.isValidProfileName(name)) {
+      return { success: false, message: INVALID_PROFILE_NAME_MESSAGE };
+    }
+
     const profilePath = this.getProfilePath(name);
 
     if (!this.fileSystem.existsSync(profilePath)) {
@@ -93,6 +125,10 @@ export class ProfileManager {
   }
 
   getProfileContent(name: string): { success: boolean; content?: string; message?: string } {
+    if (!this.isValidProfileName(name)) {
+      return { success: false, message: INVALID_PROFILE_NAME_MESSAGE };
+    }
+
     const profilePath = this.getProfilePath(name);
 
     if (!this.fileSystem.existsSync(profilePath)) {
@@ -118,12 +154,26 @@ export class ProfileManager {
   }
 
   profileExists(name: string): boolean {
-    const profilePath = this.getProfilePath(name);
-    return this.fileSystem.existsSync(profilePath);
+    if (!this.isValidProfileName(name)) {
+      return false;
+    }
+    return this.fileSystem.existsSync(this.getProfilePath(name));
   }
 
   getProfilePath(name: string): string {
-    return `${this.config.profilesDir}/${name}.hosts`;
+    if (!this.isValidProfileName(name)) {
+      throw new InvalidProfileNameError(name);
+    }
+
+    const profilePath = path.join(this.config.profilesDir, `${name}${PROFILE_EXT}`);
+
+    // 名前の検証を通っていれば到達しないが、パス組み立てを変えた際に
+    // ディレクトリ外へ出ていないことをここでも確かめる
+    if (path.dirname(path.resolve(profilePath)) !== path.resolve(this.config.profilesDir)) {
+      throw new InvalidProfileNameError(name);
+    }
+
+    return profilePath;
   }
 
   private getDefaultHostsContent(): string {

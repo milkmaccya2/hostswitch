@@ -62,6 +62,20 @@ export class MockFileSystem implements IFileSystem {
     this.files.set(dest, content);
   }
 
+  renameSync(src: string, dest: string): void {
+    this.recordCall('renameSync', src, dest);
+    if (this.throwOnNext) {
+      this.throwOnNext = false;
+      throw this.nextError;
+    }
+    const content = this.files.get(src);
+    if (content === undefined) {
+      throw new Error(`Source file not found: ${src}`);
+    }
+    this.files.set(dest, content);
+    this.files.delete(src);
+  }
+
   unlinkSync(path: string): void {
     this.recordCall('unlinkSync', path);
     if (this.throwOnNext) {

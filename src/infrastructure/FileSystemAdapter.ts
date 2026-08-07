@@ -22,6 +22,10 @@ export class FileSystemAdapter implements IFileSystem {
     fs.copySync(src, dest);
   }
 
+  renameSync(src: string, dest: string): void {
+    fs.renameSync(src, dest);
+  }
+
   unlinkSync(path: string): void {
     fs.unlinkSync(path);
   }

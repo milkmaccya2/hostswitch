@@ -34,6 +34,10 @@ export class HostSwitchService {
     this.fileSystem.ensureDirSync(this.config.backupDir);
   }
 
+  isValidProfileName(name: string): boolean {
+    return this.profileManager.isValidProfileName(name);
+  }
+
   getCurrentProfile(): string | null {
     return this.currentProfileManager.getCurrentProfile();
   }
@@ -76,7 +80,15 @@ export class HostSwitchService {
     let backupPath: string | undefined;
 
     if (!currentProfile || isModified) {
-      backupPath = this.backupManager.backupHosts();
+      const backup = this.backupManager.backupHosts();
+      if (!backup.success) {
+        // バックアップは切り替え前の安全装置なので、取れないまま進めない
+        return {
+          success: false,
+          message: `Aborted: could not back up the current hosts file (${backup.message}).`,
+        };
+      }
+      backupPath = backup.path;
       if (isModified && currentProfile) {
         this.logger.warn('Current hosts file was modified outside of hostswitch.');
       }
@@ -84,7 +96,7 @@ export class HostSwitchService {
 
     try {
       const profilePath = this.profileManager.getProfilePath(name);
-      this.fileSystem.copySync(profilePath, this.config.hostsPath);
+      this.replaceHostsFile(profilePath);
       this.currentProfileManager.setCurrentProfile(name);
       return {
         success: true,
@@ -105,6 +117,29 @@ export class HostSwitchService {
           message: `Error switching profile: ${error.message}`,
         };
       }
+    }
+  }
+
+  /**
+   * hostsファイルを差し替える。
+   *
+   * 同じディレクトリに一時ファイルを作ってから rename で置き換える。
+   * rename は同一ファイルシステム内でアトミックなので、途中で失敗しても
+   * hostsファイルが中途半端な内容になることがない。
+   */
+  private replaceHostsFile(profilePath: string): void {
+    const tempPath = `${this.config.hostsPath}.hostswitch-${process.pid}`;
+
+    try {
+      this.fileSystem.copySync(profilePath, tempPath);
+      this.fileSystem.renameSync(tempPath, this.config.hostsPath);
+    } catch (err) {
+      try {
+        this.fileSystem.unlinkSync(tempPath);
+      } catch {
+        // 後始末の失敗で本来のエラーを隠さない
+      }
+      throw err;
     }
   }
 

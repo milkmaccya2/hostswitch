@@ -203,13 +203,9 @@ export class InteractiveUserInterface implements IUserInterface {
   }
 
   private async handleCreateProfile(): Promise<void> {
-    const profileName = await this.promptInput('Enter profile name:', (input: string) => {
-      if (!input.trim()) return 'Profile name cannot be empty';
-      if (!/^[a-zA-Z0-9_-]+$/.test(input)) {
-        return 'Use only letters, numbers, hyphens, and underscores';
-      }
-      return true;
-    });
+    const profileName = await this.promptInput('Enter profile name:', (input: string) =>
+      this.facade.validateProfileNameInput(input)
+    );
 
     const fromCurrent = await this.promptConfirm('Copy current hosts file content?');
     const result = await this.facade.createProfile(profileName, fromCurrent);
