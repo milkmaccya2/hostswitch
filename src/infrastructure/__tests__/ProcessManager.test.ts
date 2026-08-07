@@ -1,12 +1,14 @@
-import { execSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProcessManager } from '../ProcessManager';
 
-vi.mock('child_process');
+vi.mock('node:child_process');
+
+const ok = { status: 0, error: undefined } as unknown as ReturnType<typeof spawnSync>;
 
 describe('ProcessManager', () => {
   let manager: ProcessManager;
-  const mockExecSync = vi.mocked(execSync);
+  const mockSpawnSync = vi.mocked(spawnSync);
 
   beforeEach(() => {
     manager = new ProcessManager();
@@ -14,87 +16,81 @@ describe('ProcessManager', () => {
   });
 
   describe('executeEditor()', () => {
-    it('エディタを正常に実行', async () => {
-      mockExecSync.mockReturnValue(Buffer.from(''));
+    it('コマンドと引数を分けて渡す（シェルを経由しない）', async () => {
+      mockSpawnSync.mockReturnValue(ok);
 
       await manager.executeEditor('vi', '/test/file.txt');
 
-      expect(mockExecSync).toHaveBeenCalledWith('vi /test/file.txt', { stdio: 'inherit' });
+      expect(mockSpawnSync).toHaveBeenCalledWith('vi', ['/test/file.txt'], { stdio: 'inherit' });
     });
 
-    it('複数の引数を持つエディタコマンドを実行', async () => {
-      mockExecSync.mockReturnValue(Buffer.from(''));
+    it('引数つきのエディタ指定を分解する', async () => {
+      mockSpawnSync.mockReturnValue(ok);
 
       await manager.executeEditor('code --wait', '/test/file.txt');
 
-      expect(mockExecSync).toHaveBeenCalledWith('code --wait /test/file.txt', { stdio: 'inherit' });
-    });
-
-    it('エディタ実行エラーを適切に処理', async () => {
-      const error = new Error('Editor not found');
-      mockExecSync.mockImplementation(() => {
-        throw error;
+      expect(mockSpawnSync).toHaveBeenCalledWith('code', ['--wait', '/test/file.txt'], {
+        stdio: 'inherit',
       });
-
-      await expect(manager.executeEditor('nonexistent-editor', '/test/file.txt')).rejects.toThrow(
-        'Editor not found'
-      );
     });
 
-    it('エディタが終了コード1で終了した場合も例外を投げる', async () => {
-      const error = Object.assign(new Error('Command failed: editor'), { status: 1 });
-      mockExecSync.mockImplementation(() => {
-        throw error;
+    it('パスにスペースが含まれていても1つの引数として渡る', async () => {
+      mockSpawnSync.mockReturnValue(ok);
+
+      await manager.executeEditor('vi', '/test/my profile.hosts');
+
+      expect(mockSpawnSync).toHaveBeenCalledWith('vi', ['/test/my profile.hosts'], {
+        stdio: 'inherit',
       });
+    });
 
-      await expect(manager.executeEditor('editor', '/test/file.txt')).rejects.toThrow(
-        'Command failed: editor'
+    it('シェルのメタ文字を含むパスでも展開されない', async () => {
+      mockSpawnSync.mockReturnValue(ok);
+
+      await manager.executeEditor('vi', '/test/$(whoami).hosts');
+
+      expect(mockSpawnSync).toHaveBeenCalledWith('vi', ['/test/$(whoami).hosts'], {
+        stdio: 'inherit',
+      });
+    });
+
+    it('起動に失敗した場合は例外を投げる', async () => {
+      const error = new Error('spawn nonexistent ENOENT');
+      mockSpawnSync.mockReturnValue({ status: null, error } as unknown as ReturnType<
+        typeof spawnSync
+      >);
+
+      await expect(manager.executeEditor('nonexistent', '/test/file.txt')).rejects.toThrow(
+        'spawn nonexistent ENOENT'
       );
     });
 
-    it('Promise.resolveで成功を返す', async () => {
-      mockExecSync.mockReturnValue(Buffer.from(''));
+    it('エディタが非ゼロ終了した場合は例外を投げる', async () => {
+      mockSpawnSync.mockReturnValue({ status: 1, error: undefined } as unknown as ReturnType<
+        typeof spawnSync
+      >);
 
-      const result = manager.executeEditor('vi', '/test/file.txt');
-
-      await expect(result).resolves.toBeUndefined();
+      await expect(manager.executeEditor('editor', '/file')).rejects.toThrow('exited with code 1');
     });
 
-    it('execSyncにstdio: inheritオプションを渡す', async () => {
-      mockExecSync.mockReturnValue(Buffer.from(''));
+    it('エディタ名が空なら例外を投げる', async () => {
+      await expect(manager.executeEditor('   ', '/file')).rejects.toThrow('No editor specified');
+    });
 
-      await manager.executeEditor('vim', '/path/to/file');
+    it('成功時は undefined を返す', async () => {
+      mockSpawnSync.mockReturnValue(ok);
 
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({ stdio: 'inherit' })
-      );
+      await expect(manager.executeEditor('vi', '/test/file.txt')).resolves.toBeUndefined();
     });
   });
 
-  describe('エラーハンドリング', () => {
-    it('例外が発生した場合はPromise.rejectで処理', async () => {
-      const error = new Error('Execution failed');
-      mockExecSync.mockImplementation(() => {
-        throw error;
-      });
+  describe('openEditor()', () => {
+    it('executeEditor に委譲する', async () => {
+      mockSpawnSync.mockReturnValue(ok);
 
-      const promise = manager.executeEditor('editor', '/file');
+      await manager.openEditor('nano', '/test/file.txt');
 
-      await expect(promise).rejects.toBe(error);
-    });
-
-    it('非同期で例外を適切に処理', async () => {
-      mockExecSync.mockImplementation(() => {
-        throw new Error('Async error');
-      });
-
-      try {
-        await manager.executeEditor('editor', '/file');
-        expect(true).toBe(false); // この行に到達してはいけない
-      } catch (error) {
-        expect((error as Error).message).toBe('Async error');
-      }
+      expect(mockSpawnSync).toHaveBeenCalledWith('nano', ['/test/file.txt'], { stdio: 'inherit' });
     });
   });
 });

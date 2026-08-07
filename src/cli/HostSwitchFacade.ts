@@ -7,6 +7,13 @@ import type {
   ProfileInfo,
 } from '../interfaces';
 
+const DEFAULT_EDITOR = 'vi';
+
+export function resolveEditor(env: NodeJS.ProcessEnv = process.env): string {
+  const editor = env.VISUAL?.trim() || env.EDITOR?.trim();
+  return editor || DEFAULT_EDITOR;
+}
+
 export class HostSwitchFacade {
   constructor(
     private hostSwitchService: HostSwitchService,
@@ -204,7 +211,7 @@ export class HostSwitchFacade {
       }
 
       const profilePath = this.hostSwitchService.getProfilePath(name);
-      await this.processManager.openEditor('vi', profilePath);
+      await this.processManager.openEditor(resolveEditor(), profilePath);
 
       return {
         success: true,
