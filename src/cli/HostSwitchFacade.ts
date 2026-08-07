@@ -1,4 +1,5 @@
 import type { HostSwitchService } from '../core/HostSwitchService';
+import { INVALID_PROFILE_NAME_MESSAGE } from '../core/ProfileManager';
 import type {
   ICommandResult,
   IPermissionChecker,
@@ -56,6 +57,11 @@ export class HostSwitchFacade {
   }
 
   async switchProfile(name: string): Promise<ICommandResult> {
+    const validation = this.validateProfileName(name);
+    if (!validation.success) {
+      return validation;
+    }
+
     try {
       if (!this.hostSwitchService.profileExists(name)) {
         return {
@@ -157,6 +163,11 @@ export class HostSwitchFacade {
   }
 
   async showProfile(name: string): Promise<ICommandResult> {
+    const validation = this.validateProfileName(name);
+    if (!validation.success) {
+      return validation;
+    }
+
     try {
       const result = this.hostSwitchService.getProfileContent(name);
       if (result.success) {
@@ -179,6 +190,11 @@ export class HostSwitchFacade {
   }
 
   async editProfile(name: string): Promise<ICommandResult> {
+    const validation = this.validateProfileName(name);
+    if (!validation.success) {
+      return validation;
+    }
+
     try {
       if (!this.hostSwitchService.profileExists(name)) {
         return {
@@ -211,21 +227,18 @@ export class HostSwitchFacade {
     return profiles.filter((p) => !p.isCurrent);
   }
 
+  /**
+   * inquirer の validate に渡せる形。判定そのものは core が持つ。
+   */
+  validateProfileNameInput(input: string): boolean | string {
+    if (!input || input.trim() === '') {
+      return 'Profile name cannot be empty';
+    }
+    return this.hostSwitchService.isValidProfileName(input) ? true : INVALID_PROFILE_NAME_MESSAGE;
+  }
+
   private validateProfileName(name: string): ICommandResult {
-    if (!name || name.trim() === '') {
-      return {
-        success: false,
-        message: 'Profile name cannot be empty',
-      };
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-      return {
-        success: false,
-        message: 'Invalid profile name. Use only letters, numbers, hyphens, and underscores',
-      };
-    }
-
-    return { success: true };
+    const result = this.validateProfileNameInput(name);
+    return typeof result === 'string' ? { success: false, message: result } : { success: true };
   }
 }

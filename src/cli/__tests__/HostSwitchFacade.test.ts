@@ -25,6 +25,7 @@ describe('HostSwitchFacade', () => {
     getProfilePath: ReturnType<typeof vi.fn>;
     getCurrentProfile: ReturnType<typeof vi.fn>;
     getConfig: ReturnType<typeof vi.fn>;
+    isValidProfileName: ReturnType<typeof vi.fn>;
   };
   let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
@@ -41,6 +42,7 @@ describe('HostSwitchFacade', () => {
       getProfilePath: vi.fn(),
       getCurrentProfile: vi.fn(),
       getConfig: vi.fn().mockReturnValue({ hostsPath: '/etc/hosts' }),
+      isValidProfileName: vi.fn((name: string) => /^[a-zA-Z0-9_-]+$/.test(name)),
     };
 
     _mockLogger = {

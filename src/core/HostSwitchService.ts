@@ -34,6 +34,10 @@ export class HostSwitchService {
     this.fileSystem.ensureDirSync(this.config.backupDir);
   }
 
+  isValidProfileName(name: string): boolean {
+    return this.profileManager.isValidProfileName(name);
+  }
+
   getCurrentProfile(): string | null {
     return this.currentProfileManager.getCurrentProfile();
   }
