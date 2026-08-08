@@ -143,7 +143,7 @@ describe('Integration Tests', () => {
         message: 'Switched to test-profile',
       });
       await controller.executeCommand('switch', { name: 'test-profile' });
-      expect(facade.switchProfile).toHaveBeenCalledWith('test-profile');
+      expect(facade.switchProfile).toHaveBeenCalledWith('test-profile', { flushDns: undefined });
 
       // 4. Delete profile with force flag
       await controller.executeCommand('delete', { name: 'test-profile', force: true });

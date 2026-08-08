@@ -1,10 +1,13 @@
 import type {
   CreateProfileResult,
+  DnsFlushResult,
   HostSwitchConfig,
+  IDnsCacheFlusher,
   IFileSystem,
   ILogger,
   IPermissionChecker,
   ProfileInfo,
+  SwitchOptions,
   SwitchResult,
 } from '../interfaces';
 import { BackupManager } from './BackupManager';
@@ -20,7 +23,8 @@ export class HostSwitchService {
     private fileSystem: IFileSystem,
     private logger: ILogger,
     private config: HostSwitchConfig,
-    private permissionChecker: IPermissionChecker
+    private permissionChecker: IPermissionChecker,
+    private dnsCacheFlusher?: IDnsCacheFlusher
   ) {
     this.ensureDirs();
     this.profileManager = new ProfileManager(fileSystem, config);
@@ -51,7 +55,7 @@ export class HostSwitchService {
     return this.profileManager.createProfile(name, fromCurrent);
   }
 
-  async switchProfile(name: string): Promise<SwitchResult> {
+  async switchProfile(name: string, options: SwitchOptions = {}): Promise<SwitchResult> {
     if (!this.profileManager.profileExists(name)) {
       return {
         success: false,
@@ -71,10 +75,10 @@ export class HostSwitchService {
       };
     }
 
-    return this.doSwitchProfile(name);
+    return this.doSwitchProfile(name, options);
   }
 
-  private doSwitchProfile(name: string): SwitchResult {
+  private async doSwitchProfile(name: string, options: SwitchOptions = {}): Promise<SwitchResult> {
     const currentProfile = this.getCurrentProfile();
     const isModified = this.currentProfileManager.isHostsModified();
     let backupPath: string | undefined;
@@ -98,10 +102,15 @@ export class HostSwitchService {
       const profilePath = this.profileManager.getProfilePath(name);
       this.replaceHostsFile(profilePath);
       this.currentProfileManager.setCurrentProfile(name);
+
+      // hostsの書き換えが済んだ後に行う。フラッシュが失敗しても切り替えは成功
+      const dnsFlush = await this.flushDnsCache(options);
+
       return {
         success: true,
         message: `Switched to profile '${name}'.`,
         backupPath,
+        dnsFlush,
       };
     } catch (err) {
       const error = err as NodeJS.ErrnoException;
@@ -117,6 +126,31 @@ export class HostSwitchService {
           message: `Error switching profile: ${error.message}`,
         };
       }
+    }
+  }
+
+  /**
+   * DNSキャッシュのフラッシュを試みる。ベストエフォートなので、
+   * 失敗しても切り替え自体は成功として扱い、警告だけ出す。
+   */
+  private async flushDnsCache(options: SwitchOptions): Promise<DnsFlushResult | undefined> {
+    if (options.flushDns === false || !this.dnsCacheFlusher) {
+      return undefined;
+    }
+
+    try {
+      const result = await this.dnsCacheFlusher.flush();
+      if (result.attempted && !result.success) {
+        this.logger.warn(
+          `Could not flush the DNS cache (${result.command}: ${result.message}). ` +
+            'The switch itself succeeded; you may need to flush it manually.'
+        );
+      }
+      return result;
+    } catch (err) {
+      const error = err as Error;
+      this.logger.warn(`Could not flush the DNS cache (${error.message}).`);
+      return { attempted: true, success: false, message: error.message };
     }
   }
 

@@ -35,6 +35,24 @@ export interface IProcessManager {
   openEditor(editor: string, filePath: string): Promise<void>;
 }
 
+export interface DnsFlushResult {
+  /** フラッシュを試みたか。該当コマンドが無い環境では false */
+  attempted: boolean;
+  success: boolean;
+  /** 実行したコマンド。表示用 */
+  command?: string;
+  message?: string;
+}
+
+export type CommandRunner = (
+  command: string,
+  args: string[]
+) => { status: number | null; error?: Error };
+
+export interface IDnsCacheFlusher {
+  flush(): Promise<DnsFlushResult>;
+}
+
 export interface IPermissionChecker {
   canWriteToFile(filePath: string): Promise<boolean>;
   requiresSudo(filePath?: string): boolean;
@@ -61,6 +79,12 @@ export interface SwitchResult {
   message?: string;
   backupPath?: string;
   requiresSudo?: boolean;
+  dnsFlush?: DnsFlushResult;
+}
+
+export interface SwitchOptions {
+  /** false でDNSキャッシュのフラッシュを行わない。既定は行う */
+  flushDns?: boolean;
 }
 
 export interface BackupResult {

@@ -184,7 +184,8 @@ All data is stored in `~/.hostswitch/`:
 All commands are defined using Commander.js:
 - `list` / `ls`: Show all profiles
 - `create <name> [--from-current]`: Create new profile
-- `switch <name>` / `use <name>`: Switch active profile (requires sudo)
+- `switch <name>` / `use <name>`: Switch active profile (requires sudo). Flushes the OS DNS cache
+  afterwards; disable with `--no-flush` or `HOSTSWITCH_NO_DNS_FLUSH=true`
 - `delete <name>` / `rm <name>`: Remove profile
 - `show <name>` / `cat <name>`: Display profile contents
 - `edit <name>`: Open profile in editor (uses $EDITOR or vi)

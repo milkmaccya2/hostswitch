@@ -5,6 +5,7 @@ import type {
   IPermissionChecker,
   IProcessManager,
   ProfileInfo,
+  SwitchOptions,
 } from '../interfaces';
 
 export class HostSwitchFacade {
@@ -56,7 +57,7 @@ export class HostSwitchFacade {
     }
   }
 
-  async switchProfile(name: string): Promise<ICommandResult> {
+  async switchProfile(name: string, options: SwitchOptions = {}): Promise<ICommandResult> {
     const validation = this.validateProfileName(name);
     if (!validation.success) {
       return validation;
@@ -80,11 +81,14 @@ export class HostSwitchFacade {
         };
       }
 
-      const result = await this.hostSwitchService.switchProfile(name);
+      const result = await this.hostSwitchService.switchProfile(name, options);
       if (result.success) {
         let message = `Switched to profile "${name}"`;
         if (result.backupPath) {
           message += ' (backup created)';
+        }
+        if (result.dnsFlush?.attempted && result.dnsFlush.success) {
+          message += ' (DNS cache flushed)';
         }
         return {
           success: true,
