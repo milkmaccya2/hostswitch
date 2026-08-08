@@ -22,7 +22,7 @@ describe('User Interface Classes', () => {
       elevate: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
-    } as HostSwitchFacade;
+    } as unknown as HostSwitchFacade;
 
     mockLogger = {
       info: vi.fn(),

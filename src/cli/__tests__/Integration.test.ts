@@ -45,6 +45,7 @@ describe('Integration Tests', () => {
       readFileSync: vi.fn(),
       writeFileSync: vi.fn(),
       copySync: vi.fn(),
+      renameSync: vi.fn(),
       unlinkSync: vi.fn(),
       existsSync: vi.fn().mockReturnValue(true),
       ensureDirSync: vi.fn(),

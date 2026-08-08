@@ -20,6 +20,7 @@ describe('Auto-Sudo Functionality', () => {
       success: vi.fn(),
       dim: vi.fn(),
       bold: vi.fn(),
+      debug: vi.fn(),
     };
 
     mockElevate = vi.fn().mockResolvedValue({ success: true, message: 'Completed successfully' });

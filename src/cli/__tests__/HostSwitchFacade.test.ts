@@ -3,7 +3,6 @@ import type { HostSwitchService } from '../../core/HostSwitchService';
 import type {
   CreateProfileResult,
   DeleteResult,
-  ILogger,
   IPermissionChecker,
   IProcessManager,
   ProfileContentResult,
@@ -32,7 +31,6 @@ describe('HostSwitchFacade', () => {
     restoreBackup: ReturnType<typeof vi.fn>;
     getStatus: ReturnType<typeof vi.fn>;
   };
-  let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
   let mockPermissionChecker: IPermissionChecker;
 
@@ -55,17 +53,6 @@ describe('HostSwitchFacade', () => {
       getStatus: vi.fn(),
     };
 
-    _mockLogger = {
-      info: vi.fn(),
-      warn: vi.fn(),
-      warning: vi.fn(),
-      error: vi.fn(),
-      success: vi.fn(),
-      dim: vi.fn(),
-      bold: vi.fn(),
-      debug: vi.fn(),
-    };
-
     mockProcessManager = {
       executeEditor: vi.fn(),
       openEditor: vi.fn(),
@@ -80,7 +67,7 @@ describe('HostSwitchFacade', () => {
     };
 
     facade = new HostSwitchFacade(
-      mockService as HostSwitchService,
+      mockService as unknown as HostSwitchService,
       mockProcessManager,
       mockPermissionChecker
     );
