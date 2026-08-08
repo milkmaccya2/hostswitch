@@ -2,7 +2,6 @@
 
 import chalk from 'chalk';
 import { Command } from 'commander';
-import updateNotifier from 'update-notifier';
 import packageJson from '../package.json';
 import { CliController } from './cli/CliController';
 import { HostSwitchFacade } from './cli/HostSwitchFacade';
@@ -10,6 +9,7 @@ import { CliUserInterface } from './cli/ui/CliUserInterface';
 import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
 import { createConfig } from './config';
 import { HostSwitchService } from './core/HostSwitchService';
+import { UpdateChecker } from './core/UpdateChecker';
 import { ChalkLogger } from './infrastructure/ChalkLogger';
 import { DnsCacheFlusher } from './infrastructure/DnsCacheFlusher';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
@@ -141,11 +141,7 @@ async function main() {
     'Update with the tool you used to install hostswitch, e.g.\n' +
     chalk.cyan('{updateCommand}');
 
-  updateNotifier({
-    pkg: packageJson,
-    updateCheckInterval: 0,
-    shouldNotifyInNpmScript: true,
-  }).notify({ isGlobal: true, message: updateMessage });
+  new UpdateChecker(packageJson).check(updateMessage);
 
   const program = parseCommands();
 

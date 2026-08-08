@@ -230,8 +230,14 @@ Build commands:
 
 ## Update Notification Feature
 
-HostSwitch checks for a newer published version with `update-notifier`, called directly from `main()` in `src/hostswitch.ts`:
-- **Check**: Runs in a detached child process, so it never blocks an operation. `updateCheckInterval: 0` starts a check on every invocation
+HostSwitch checks for a newer published version with `update-notifier`, wrapped by the
+`UpdateChecker` class in `src/core/UpdateChecker.ts` and called from `main()` in `src/hostswitch.ts`:
+- **Check**: Runs in a detached child process, so it never blocks an operation. `updateCheckInterval`
+  is 24 hours, so a check starts at most once a day rather than on every invocation
+- **Skipped entirely when**: `HOSTSWITCH_NO_UPDATE_CHECK=true`, or the process is running as root.
+  The root case matters because `switch` re-runs itself under sudo — letting `update-notifier` write
+  its config store as root would make later non-sudo runs fail with `EACCES`. `UpdateChecker.skipReason()`
+  reports which of the two applied
 - **Notification timing**: The check writes its result to a config store and the notifier reads that result on the *next* invocation, printing it when the process exits. A version published moments ago is reported one run later
 - **Requires a TTY**: Nothing is printed when stdout is not a TTY, so piping the output hides the notice
 - **Disabled when**: `NO_UPDATE_NOTIFIER` is present in the environment, `NODE_ENV=test`, `--no-update-notifier` is passed, or a CI environment is detected

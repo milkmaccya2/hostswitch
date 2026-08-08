@@ -324,6 +324,17 @@ MIT License - See [LICENSE](LICENSE) file for details.
 Bug reports and feature requests are welcome at [GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues).
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, development workflow, and testing guidelines.
 
+## Update Notifications
+
+hostswitch checks for a newer published version at most once a day. To turn it off:
+
+```bash
+export HOSTSWITCH_NO_UPDATE_CHECK=true
+```
+
+The check is also skipped automatically while running as root, so `sudo hostswitch switch` never
+leaves a root-owned config file behind.
+
 ## Security
 
 Found a security issue? Please see [SECURITY.md](SECURITY.md) for how to report it privately.
