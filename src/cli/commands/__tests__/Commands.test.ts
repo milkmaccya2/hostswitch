@@ -19,7 +19,7 @@ describe('Command Classes', () => {
       editProfile: vi.fn(),
       showProfile: vi.fn(),
       deleteProfile: vi.fn(),
-      switchProfileWithSudo: vi.fn(),
+      elevate: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
     };

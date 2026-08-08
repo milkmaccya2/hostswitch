@@ -71,7 +71,7 @@ export class HostSwitchFacade {
         };
       }
 
-      if (this.permissionChecker.requiresSudo()) {
+      if (this.permissionChecker.requiresSudo(this.hostSwitchService.getHostsPath())) {
         return {
           success: false,
           requiresSudo: true,
@@ -109,24 +109,28 @@ export class HostSwitchFacade {
     }
   }
 
-  async switchProfileWithSudo(name: string): Promise<ICommandResult> {
+  /**
+   * sudo で自分自身を再実行する。UI 層はこれだけを使い、
+   * 自前で子プロセスを起動しない。
+   */
+  async elevate(args: string[]): Promise<ICommandResult> {
     try {
-      const result = await this.permissionChecker.rerunWithSudo(['switch', name]);
+      const result = await this.permissionChecker.rerunWithSudo(args);
       if (result.success) {
         return {
           success: true,
-          message: result.message || 'Switched successfully',
+          message: result.message || 'Completed successfully',
         };
       } else {
         return {
           success: false,
-          message: `Failed to switch profile: ${result.message || 'Unknown error'}`,
+          message: `Failed to run with sudo: ${result.message || 'Unknown error'}`,
         };
       }
     } catch (error) {
       return {
         success: false,
-        message: `Failed to switch profile: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Failed to run with sudo: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }

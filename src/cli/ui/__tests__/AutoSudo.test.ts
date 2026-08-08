@@ -8,6 +8,7 @@ describe('Auto-Sudo Functionality', () => {
   let mockLogger: ILogger;
   let mockFacade: HostSwitchFacade;
   let cliUI: CliUserInterface;
+  let mockElevate: ReturnType<typeof vi.fn>;
   let interactiveUI: InteractiveUserInterface;
 
   beforeEach(() => {
@@ -21,11 +22,13 @@ describe('Auto-Sudo Functionality', () => {
       bold: vi.fn(),
     };
 
-    mockFacade = {
-      switchProfileWithSudo: vi.fn(),
-    } as Pick<HostSwitchFacade, 'switchProfileWithSudo'>;
+    mockElevate = vi.fn().mockResolvedValue({ success: true, message: 'Completed successfully' });
 
-    cliUI = new CliUserInterface(mockLogger);
+    mockFacade = {
+      elevate: vi.fn().mockResolvedValue({ success: true, message: 'Completed successfully' }),
+    } as unknown as HostSwitchFacade;
+
+    cliUI = new CliUserInterface(mockLogger, mockElevate);
     interactiveUI = new InteractiveUserInterface(mockFacade, mockLogger);
   });
 
@@ -34,7 +37,7 @@ describe('Auto-Sudo Functionality', () => {
   });
 
   describe('CliUserInterface Auto-Sudo', () => {
-    it('should detect sudo requirement and skip in test environment', async () => {
+    it('注入された昇格関数に sudoArgs をそのまま渡す', async () => {
       const result: ICommandResult = {
         success: false,
         requiresSudo: true,
@@ -47,16 +50,14 @@ describe('Auto-Sudo Functionality', () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         'This operation requires sudo privileges. Rerunning with sudo...'
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
+      // 昇格の実装は1箇所に集約されており、UI は呼ぶだけ
+      expect(mockElevate).toHaveBeenCalledWith(['switch', 'my-profile']);
     });
 
-    it('should respect NODE_ENV=test environment', async () => {
-      const originalNodeEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'test';
-
-      const mockExecSync = vi.fn();
-      const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
-
+    it('昇格関数が渡されていなければ実行せず案内だけ出す', async () => {
+      // テスト環境かどうかを本番コードで判定していたのをやめ、
+      // 昇格手段の有無で決まるようにした
+      const uiWithoutElevate = new CliUserInterface(mockLogger);
       const result: ICommandResult = {
         success: false,
         requiresSudo: true,
@@ -64,28 +65,18 @@ describe('Auto-Sudo Functionality', () => {
         sudoArgs: ['switch', 'staging'],
       };
 
-      await cliUI.handleCommandResult(result);
+      await uiWithoutElevate.handleCommandResult(result);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'This operation requires sudo privileges. Rerunning with sudo...'
+      expect(mockElevate).not.toHaveBeenCalled();
+      expect(mockLogger.warning).toHaveBeenCalledWith(
+        expect.stringContaining('sudo hostswitch switch staging')
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
-      expect(mockExecSync).not.toHaveBeenCalled();
-      expect(mockExit).not.toHaveBeenCalled();
-
-      // Restore
-      if (originalNodeEnv !== undefined) {
-        process.env.NODE_ENV = originalNodeEnv;
-      } else {
-        delete process.env.NODE_ENV;
-      }
-      mockExit.mockRestore();
     });
   });
 
   describe('InteractiveUserInterface Auto-Sudo', () => {
     it('should take the profile name from sudoArgs', async () => {
-      vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+      vi.mocked(mockFacade.elevate).mockResolvedValue({
         success: true,
         message: 'Success',
       });
@@ -99,11 +90,11 @@ describe('Auto-Sudo Functionality', () => {
 
       await interactiveUI.handleCommandResult(result);
 
-      expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('production');
+      expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'production']);
     });
 
     it('should not run the profile name through the displayed sudoCommand', async () => {
-      vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+      vi.mocked(mockFacade.elevate).mockResolvedValue({
         success: true,
         message: 'Success',
       });
@@ -118,33 +109,24 @@ describe('Auto-Sudo Functionality', () => {
 
       await interactiveUI.handleCommandResult(result);
 
-      expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('production');
+      expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'production']);
     });
 
-    it('should not execute sudo for non-switch commands', async () => {
-      const argsList = [
-        ['list'],
-        ['create', 'test'],
-        ['delete', 'test'],
-        ['show', 'test'],
-        ['edit', 'test'],
-      ];
+    it('sudoArgs をそのまま昇格に渡す（コマンドの選別は Facade の責務）', async () => {
+      vi.mocked(mockFacade.elevate).mockResolvedValue({ success: true, message: 'ok' });
 
-      for (const sudoArgs of argsList) {
-        const result: ICommandResult = {
-          success: false,
-          requiresSudo: true,
-          sudoArgs,
-        };
+      await interactiveUI.handleCommandResult({
+        success: false,
+        requiresSudo: true,
+        sudoArgs: ['switch', 'production'],
+      });
 
-        await interactiveUI.handleCommandResult(result);
-      }
-
-      expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
+      expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'production']);
     });
 
     it('should handle incomplete sudoArgs gracefully', async () => {
-      const argsList: (string[] | undefined)[] = [undefined, [], ['switch'], ['switch', '']];
+      // 引数の個数が正しいかは Facade の責務。UI は構造的に壊れた値だけ弾く
+      const argsList: (string[] | undefined)[] = [undefined, [], ['switch', '']];
 
       for (const sudoArgs of argsList) {
         const result: ICommandResult = {
@@ -156,11 +138,11 @@ describe('Auto-Sudo Functionality', () => {
         await interactiveUI.handleCommandResult(result);
       }
 
-      expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
+      expect(mockFacade.elevate).not.toHaveBeenCalled();
     });
 
-    it('should handle switchProfileWithSudo rejection', async () => {
-      vi.mocked(mockFacade.switchProfileWithSudo).mockRejectedValue(new Error('Network error'));
+    it('should handle elevate rejection', async () => {
+      vi.mocked(mockFacade.elevate).mockRejectedValue(new Error('Network error'));
 
       const result: ICommandResult = {
         success: false,
@@ -173,9 +155,7 @@ describe('Auto-Sudo Functionality', () => {
       await interactiveUI.handleCommandResult(result);
 
       expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Switching to profile "production" with sudo...'
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Rerunning `switch production` with sudo...');
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to execute sudo command: Network error'
       );
@@ -193,13 +173,10 @@ describe('Auto-Sudo Functionality', () => {
       await cliUI.handleCommandResult(result);
       await interactiveUI.handleCommandResult(result);
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'This operation requires sudo privileges. Rerunning with sudo...'
-      );
+      // 現在の argv を流用して root 実行してしまわないこと
       expect(mockLogger.error).toHaveBeenCalledWith('No sudo command provided');
-      expect(mockLogger.info).not.toHaveBeenCalledWith('(Skipped in test environment)');
-      expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-      expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
+      expect(mockElevate).not.toHaveBeenCalled();
+      expect(mockFacade.elevate).not.toHaveBeenCalled();
     });
 
     it('should handle empty sudoArgs', async () => {
@@ -212,7 +189,7 @@ describe('Auto-Sudo Functionality', () => {
       await interactiveUI.handleCommandResult(result);
 
       expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-      expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
+      expect(mockFacade.elevate).not.toHaveBeenCalled();
     });
   });
 });

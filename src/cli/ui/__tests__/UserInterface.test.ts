@@ -19,7 +19,7 @@ describe('User Interface Classes', () => {
       editProfile: vi.fn(),
       showProfile: vi.fn(),
       deleteProfile: vi.fn(),
-      switchProfileWithSudo: vi.fn(),
+      elevate: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
     } as HostSwitchFacade;
@@ -40,9 +40,11 @@ describe('User Interface Classes', () => {
 
   describe('CliUserInterface', () => {
     let cliUI: CliUserInterface;
+    let mockElevate: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-      cliUI = new CliUserInterface(mockLogger);
+      mockElevate = vi.fn().mockResolvedValue({ success: true, message: 'Completed successfully' });
+      cliUI = new CliUserInterface(mockLogger, mockElevate);
     });
 
     describe('showMessage', () => {
@@ -120,7 +122,7 @@ describe('User Interface Classes', () => {
         expect(mockLogger.info).toHaveBeenCalledWith(
           'This operation requires sudo privileges. Rerunning with sudo...'
         );
-        expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
+        expect(mockElevate).toHaveBeenCalled();
       });
 
       it('should handle confirmation requirement', async () => {
@@ -378,7 +380,7 @@ describe('User Interface Classes', () => {
       });
 
       it('should handle sudo requirement by auto-executing with facade', async () => {
-        vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+        vi.mocked(mockFacade.elevate).mockResolvedValue({
           success: true,
           message: 'Switched to profile "staging"',
         });
@@ -393,38 +395,40 @@ describe('User Interface Classes', () => {
         await interactiveUI.handleCommandResult(result);
 
         expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-        expect(mockLogger.info).toHaveBeenCalledWith('Switching to profile "staging" with sudo...');
-        expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('staging');
+        expect(mockLogger.info).toHaveBeenCalledWith('Rerunning `switch staging` with sudo...');
+        expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'staging']);
         expect(mockLogger.success).toHaveBeenCalledWith('Switched to profile "staging"');
       });
 
-      it('should handle incomplete sudoArgs', async () => {
-        // プロファイル名が無い
-        const result1: ICommandResult = {
+      it('構造的に壊れた sudoArgs では昇格しない', async () => {
+        // 何を sudo で実行するかを決めるのは Facade。UI は
+        // 空・空文字を含むといった壊れた値だけを弾く
+        for (const sudoArgs of [undefined, [], ['switch', '']]) {
+          await interactiveUI.handleCommandResult({
+            success: false,
+            requiresSudo: true,
+            sudoArgs,
+          });
+        }
+
+        expect(mockFacade.elevate).not.toHaveBeenCalled();
+        expect(mockLogger.error).toHaveBeenCalledWith('No sudo command provided');
+      });
+
+      it('sudoArgs をそのまま昇格に渡す', async () => {
+        vi.mocked(mockFacade.elevate).mockResolvedValue({ success: true, message: 'ok' });
+
+        await interactiveUI.handleCommandResult({
           success: false,
           requiresSudo: true,
-          sudoArgs: ['switch'],
-        };
+          sudoArgs: ['switch', 'staging'],
+        });
 
-        await interactiveUI.handleCommandResult(result1);
-
-        expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-        expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
-
-        // switch 以外の操作
-        const result2: ICommandResult = {
-          success: false,
-          requiresSudo: true,
-          sudoArgs: ['list'],
-        };
-
-        await interactiveUI.handleCommandResult(result2);
-
-        expect(mockFacade.switchProfileWithSudo).not.toHaveBeenCalled();
+        expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'staging']);
       });
 
       it('should handle sudo execution failure in interactive mode', async () => {
-        vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+        vi.mocked(mockFacade.elevate).mockResolvedValue({
           success: false,
           message: 'Sudo execution failed',
         });
@@ -439,13 +443,13 @@ describe('User Interface Classes', () => {
         await interactiveUI.handleCommandResult(result);
 
         expect(mockLogger.warning).toHaveBeenCalledWith('This operation requires sudo privileges.');
-        expect(mockLogger.info).toHaveBeenCalledWith('Switching to profile "staging" with sudo...');
-        expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('staging');
+        expect(mockLogger.info).toHaveBeenCalledWith('Rerunning `switch staging` with sudo...');
+        expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'staging']);
         expect(mockLogger.error).toHaveBeenCalledWith('Sudo execution failed');
       });
 
       it('should pass profile names containing spaces through untouched', async () => {
-        vi.mocked(mockFacade.switchProfileWithSudo).mockResolvedValue({
+        vi.mocked(mockFacade.elevate).mockResolvedValue({
           success: true,
           message: 'Switched successfully',
         });
@@ -459,7 +463,7 @@ describe('User Interface Classes', () => {
 
         await interactiveUI.handleCommandResult(result);
 
-        expect(mockFacade.switchProfileWithSudo).toHaveBeenCalledWith('complex profile name');
+        expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'complex profile name']);
       });
     });
   });

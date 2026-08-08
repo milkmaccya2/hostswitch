@@ -5,7 +5,6 @@ import type {
   IDnsCacheFlusher,
   IFileSystem,
   ILogger,
-  IPermissionChecker,
   ProfileInfo,
   SwitchOptions,
   SwitchResult,
@@ -23,7 +22,6 @@ export class HostSwitchService {
     private fileSystem: IFileSystem,
     private logger: ILogger,
     private config: HostSwitchConfig,
-    private permissionChecker: IPermissionChecker,
     private dnsCacheFlusher?: IDnsCacheFlusher
   ) {
     this.ensureDirs();
@@ -36,6 +34,10 @@ export class HostSwitchService {
     this.fileSystem.ensureDirSync(this.config.configDir);
     this.fileSystem.ensureDirSync(this.config.profilesDir);
     this.fileSystem.ensureDirSync(this.config.backupDir);
+  }
+
+  getHostsPath(): string {
+    return this.config.hostsPath;
   }
 
   isValidProfileName(name: string): boolean {
@@ -63,18 +65,8 @@ export class HostSwitchService {
       };
     }
 
-    // 権限チェック - sudo必要かつsudoで実行されていない場合は自動sudo実行
-    const needsSudo = await this.permissionChecker.requiresSudo(this.config.hostsPath);
-    if (needsSudo) {
-      this.logger.info('Requesting administrative access...');
-      const sudoResult = await this.permissionChecker.rerunWithSudo(['switch', name]);
-      return {
-        success: sudoResult.success,
-        message: sudoResult.message,
-        requiresSudo: true,
-      };
-    }
-
+    // 昇格は CLI 層の責務。ここは書き込みを試み、権限が無ければ
+    // requiresSudo を返して呼び出し側に判断させる
     return this.doSwitchProfile(name, options);
   }
 

@@ -9,12 +9,7 @@ describe('HostSwitchService - 統合テスト', () => {
 
   beforeEach(() => {
     mocks = createTestMocks();
-    service = new HostSwitchService(
-      mocks.mockFileSystem,
-      mocks.mockLogger,
-      mocks.config,
-      mocks.mockPermissionChecker
-    );
+    service = new HostSwitchService(mocks.mockFileSystem, mocks.mockLogger, mocks.config);
   });
 
   describe('マネージャクラスとの統合', () => {
@@ -232,13 +227,7 @@ describe('HostSwitchService - 統合テスト', () => {
     });
 
     const serviceWith = (flusher: { flush: ReturnType<typeof vi.fn> }) =>
-      new HostSwitchService(
-        mocks.mockFileSystem,
-        mocks.mockLogger,
-        mocks.config,
-        mocks.mockPermissionChecker,
-        flusher
-      );
+      new HostSwitchService(mocks.mockFileSystem, mocks.mockLogger, mocks.config, flusher);
 
     it('切り替え成功後にフラッシュを実行する', async () => {
       const flusher = makeFlusher({ attempted: true, success: true, command: 'dscacheutil' });
@@ -304,96 +293,38 @@ describe('HostSwitchService - 統合テスト', () => {
     });
   });
 
-  describe('sudo権限チェック', () => {
-    it('sudoが必要な場合は自動的にsudo実行する', async () => {
+  describe('昇格はサービスの責務ではない', () => {
+    it('権限が無ければ requiresSudo を返し、自分では sudo 実行しない', async () => {
+      // 昇格は CLI 層が行う。サービスは書き込みを試み、結果だけ返す
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
-      mocks.mockPermissionChecker.requiresSudoResult = true;
-      mocks.mockPermissionChecker.rerunWithSudoResult = {
-        success: true,
-        message: 'Successfully switched with sudo',
-      };
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'original');
 
-      const result = await service.switchProfile('dev');
-
-      // モックの呼び出し履歴を確認
-      const requiresSudoCalls = mocks.mockPermissionChecker.calls.filter(
-        (call) => call.method === 'requiresSudo'
-      );
-      const rerunWithSudoCalls = mocks.mockPermissionChecker.calls.filter(
-        (call) => call.method === 'rerunWithSudo'
-      );
-
-      expect(requiresSudoCalls).toHaveLength(1);
-      expect(requiresSudoCalls[0].args[0]).toBe(mocks.config.hostsPath);
-      expect(rerunWithSudoCalls).toHaveLength(1);
-      expect(rerunWithSudoCalls[0].args[0]).toEqual(['switch', 'dev']);
-      expect(result.success).toBe(true);
-      expect(result.message).toBe('Successfully switched with sudo');
-      expect(result.requiresSudo).toBe(true);
-    });
-
-    it('sudo実行が失敗した場合はエラーを返す', async () => {
-      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
-      mocks.mockPermissionChecker.requiresSudoResult = true;
-      mocks.mockPermissionChecker.rerunWithSudoResult = {
-        success: false,
-        message: 'Sudo authentication failed',
+      const originalRenameSync = mocks.mockFileSystem.renameSync;
+      mocks.mockFileSystem.renameSync = () => {
+        const error = new Error('Permission denied') as NodeJS.ErrnoException;
+        error.code = 'EACCES';
+        throw error;
       };
 
       const result = await service.switchProfile('dev');
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Sudo authentication failed');
       expect(result.requiresSudo).toBe(true);
+      expect(result.message).toContain('sudo');
+      // サービスは PermissionChecker を持たないので、昇格は起きえない
+      expect(mocks.mockPermissionChecker.calls).toHaveLength(0);
+
+      mocks.mockFileSystem.renameSync = originalRenameSync;
     });
 
-    it('sudoが不要な場合は通常の処理を実行', async () => {
+    it('書き込めるなら通常どおり切り替える', async () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
-      mocks.mockPermissionChecker.requiresSudoResult = false;
 
       const result = await service.switchProfile('dev');
 
-      // モックの呼び出し履歴を確認
-      const requiresSudoCalls = mocks.mockPermissionChecker.calls.filter(
-        (call) => call.method === 'requiresSudo'
-      );
-      const rerunWithSudoCalls = mocks.mockPermissionChecker.calls.filter(
-        (call) => call.method === 'rerunWithSudo'
-      );
-
-      expect(requiresSudoCalls).toHaveLength(1);
-      expect(requiresSudoCalls[0].args[0]).toBe(mocks.config.hostsPath);
-      expect(rerunWithSudoCalls).toHaveLength(0);
       expect(result.success).toBe(true);
-      expect(result.requiresSudo).toBeUndefined();
-    });
-  });
-
-  describe('isProfileApplied()', () => {
-    it('プロファイルの内容がhostsと一致していればtrue', () => {
-      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
-      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
-
-      expect(service.isProfileApplied('dev')).toBe(true);
-    });
-
-    it('編集してhostsと差が出たらfalse', () => {
-      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'edited content');
-      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
-
-      expect(service.isProfileApplied('dev')).toBe(false);
-    });
-
-    it('プロファイルが読めない場合は適用を促さない', () => {
-      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'dev content');
-
-      expect(service.isProfileApplied('missing')).toBe(true);
-    });
-
-    it('hostsが読めない場合は適用を促さない', () => {
-      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'dev content');
-
-      expect(service.isProfileApplied('dev')).toBe(true);
+      expect(service.getCurrentProfile()).toBe('dev');
+      expect(mocks.mockPermissionChecker.calls).toHaveLength(0);
     });
   });
 });
