@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { ProfileData } from '../../interfaces';
 import { CurrentProfileManager } from '../CurrentProfileManager';
 import { createTestMocks, setCurrentProfile } from './setup';
 
@@ -46,7 +47,9 @@ describe('CurrentProfileManager', () => {
 
       currentProfileManager.setCurrentProfile('dev');
 
-      const currentData = mocks.mockFileSystem.readJsonSync(mocks.config.currentProfileFile);
+      const currentData = mocks.mockFileSystem.readJsonSync<ProfileData>(
+        mocks.config.currentProfileFile
+      );
       expect(currentData.profile).toBe('dev');
       expect(currentData.checksum).toBeDefined();
       expect(currentData.updatedAt).toBeDefined();
@@ -58,20 +61,22 @@ describe('CurrentProfileManager', () => {
 
       currentProfileManager.setCurrentProfile('dev');
 
-      const currentData = mocks.mockFileSystem.readJsonSync(mocks.config.currentProfileFile);
+      const currentData = mocks.mockFileSystem.readJsonSync<ProfileData>(
+        mocks.config.currentProfileFile
+      );
       expect(currentData.checksum).toBeDefined();
       expect(typeof currentData.checksum).toBe('string');
-      expect(currentData.checksum.length).toBeGreaterThan(0);
+      expect((currentData.checksum as string).length).toBeGreaterThan(0);
     });
 
     it('異なるhostsファイル内容では異なるチェックサム', () => {
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'content1');
       currentProfileManager.setCurrentProfile('dev1');
-      const data1 = mocks.mockFileSystem.readJsonSync(mocks.config.currentProfileFile);
+      const data1 = mocks.mockFileSystem.readJsonSync<ProfileData>(mocks.config.currentProfileFile);
 
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'content2');
       currentProfileManager.setCurrentProfile('dev2');
-      const data2 = mocks.mockFileSystem.readJsonSync(mocks.config.currentProfileFile);
+      const data2 = mocks.mockFileSystem.readJsonSync<ProfileData>(mocks.config.currentProfileFile);
 
       expect(data1.checksum).not.toBe(data2.checksum);
     });

@@ -17,11 +17,13 @@ vi.mock('fs-extra', () => ({
 
 describe('FileSystemAdapter', () => {
   let adapter: FileSystemAdapter;
-  let mockFs: typeof import('fs-extra');
+  let mockFs: {
+    [K in keyof typeof import('fs-extra')]: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(async () => {
     adapter = new FileSystemAdapter();
-    mockFs = await vi.importMock('fs-extra');
+    mockFs = (await vi.importMock('fs-extra')) as typeof mockFs;
     vi.clearAllMocks();
   });
 

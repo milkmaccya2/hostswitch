@@ -16,7 +16,24 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts']
+      exclude: [
+        'src/**/*.test.ts',
+        'src/**/*.spec.ts',
+        // 型定義のみで実行コードがない
+        'src/interfaces/**',
+        // テスト用モック
+        'src/__mocks__/**',
+        // 依存の組み立て（結線）のみ。E2E でしか意味のあるカバレッジにならない
+        'src/hostswitch.ts',
+      ],
+      // 現状値（lines/statements 83%, branches 84%, functions 91%）から
+      // 少し下に置く。ここを割ったら CI が落ちる
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        branches: 78,
+        functions: 85,
+      }
     }
   }
 })

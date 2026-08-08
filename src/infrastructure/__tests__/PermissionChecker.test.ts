@@ -18,12 +18,20 @@ vi.mock('fs-extra', () => ({
 describe('PermissionChecker', () => {
   let permissionChecker: PermissionChecker;
   let mockSpawn: ReturnType<typeof vi.mocked<typeof spawn>>;
-  let mockFs: typeof import('fs-extra');
+  let mockFs: {
+    access: ReturnType<typeof vi.fn>;
+    accessSync: ReturnType<typeof vi.fn>;
+    readFile: ReturnType<typeof vi.fn>;
+    writeFile: ReturnType<typeof vi.fn>;
+    copy: ReturnType<typeof vi.fn>;
+    unlink: ReturnType<typeof vi.fn>;
+    constants: { W_OK: number };
+  };
 
   beforeEach(async () => {
     permissionChecker = new PermissionChecker();
     mockSpawn = vi.mocked(spawn);
-    mockFs = await vi.importMock('fs-extra');
+    mockFs = (await vi.importMock('fs-extra')) as typeof mockFs;
 
     // デフォルトのモック設定をリセット
     vi.clearAllMocks();

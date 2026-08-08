@@ -7,7 +7,7 @@ const pkg = { name: 'hostswitch', version: '1.2.13' };
 /** update-notifier の呼び出しを記録するだけのスタブ */
 function createChecker(opts: { env?: NodeJS.ProcessEnv; euid?: number | undefined } = {}) {
   const notify = vi.fn();
-  const notifier = vi.fn(() => ({ notify }));
+  const notifier = vi.fn((_opts: unknown) => ({ notify }));
   const checker = new UpdateChecker(pkg, {
     env: opts.env ?? {},
     getEuid: () => opts.euid,
@@ -70,7 +70,7 @@ describe('UpdateChecker', () => {
 
       checker.check('msg');
 
-      const arg = notifier.mock.calls[0][0] as { updateCheckInterval: number };
+      const arg = notifier.mock.calls[0]?.[0] as { updateCheckInterval: number };
       expect(arg.updateCheckInterval).toBeGreaterThan(0);
     });
 
