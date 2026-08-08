@@ -30,6 +30,7 @@ describe('HostSwitchFacade', () => {
     isValidProfileName: ReturnType<typeof vi.fn>;
     getBackups: ReturnType<typeof vi.fn>;
     restoreBackup: ReturnType<typeof vi.fn>;
+    getStatus: ReturnType<typeof vi.fn>;
   };
   let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
@@ -51,6 +52,7 @@ describe('HostSwitchFacade', () => {
       isValidProfileName: vi.fn((name: string) => /^[a-zA-Z0-9_-]+$/.test(name)),
       getBackups: vi.fn().mockReturnValue([]),
       restoreBackup: vi.fn(),
+      getStatus: vi.fn(),
     };
 
     _mockLogger = {
@@ -460,6 +462,24 @@ describe('HostSwitchFacade', () => {
 
       expect(result.requiresSudo).toBe(true);
       expect(result.sudoArgs).toEqual(['restore', 'a']);
+    });
+  });
+
+  describe('getStatus', () => {
+    it('サービスの status を data に載せる', async () => {
+      const status = {
+        currentProfile: 'dev',
+        hostsPath: '/etc/hosts',
+        modified: false,
+        updatedAt: null,
+        latestBackup: null,
+      };
+      mockService.getStatus.mockReturnValue(status);
+
+      const result = await facade.getStatus();
+
+      expect(result.success).toBe(true);
+      expect((result.data as { status: unknown }).status).toEqual(status);
     });
   });
 });

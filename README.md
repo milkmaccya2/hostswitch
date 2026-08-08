@@ -319,6 +319,14 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 [milkmaccya2](https://github.com/milkmaccya2)
 
+## Status
+
+```bash
+hostswitch status
+```
+
+Shows the active profile, whether `/etc/hosts` still matches it (`in sync` vs `modified outside hostswitch`), when you last switched, and the most recent backup.
+
 ## Backups
 
 Every switch backs up your current hosts file under `~/.hostswitch/backups/`. List and restore them:

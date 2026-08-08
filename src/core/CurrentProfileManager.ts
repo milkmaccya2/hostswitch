@@ -32,6 +32,11 @@ export class CurrentProfileManager {
     }
   }
 
+  /** 最後に切り替えた日時。記録が無ければ null */
+  getUpdatedAt(): string | null {
+    return this.getCurrentProfileData()?.updatedAt ?? null;
+  }
+
   isHostsModified(): boolean {
     const currentData = this.getCurrentProfileData();
     if (!currentData || !currentData.checksum) {

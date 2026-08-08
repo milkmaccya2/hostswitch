@@ -8,6 +8,7 @@ import type {
   ILogger,
   ProfileInfo,
   RestoreResult,
+  StatusInfo,
   SwitchOptions,
   SwitchResult,
 } from '../interfaces';
@@ -57,6 +58,18 @@ export class HostSwitchService {
 
   getBackups(): BackupInfo[] {
     return this.backupManager.listBackups();
+  }
+
+  getStatus(): StatusInfo {
+    const currentProfile = this.getCurrentProfile();
+    return {
+      currentProfile,
+      hostsPath: this.config.hostsPath,
+      // modified が意味を持つのは current がある時だけ
+      modified: currentProfile ? this.currentProfileManager.isHostsModified() : false,
+      updatedAt: this.currentProfileManager.getUpdatedAt(),
+      latestBackup: this.backupManager.listBackups()[0] ?? null,
+    };
   }
 
   /**

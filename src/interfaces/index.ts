@@ -108,6 +108,17 @@ export interface BackupInfo {
   createdAt: Date | null;
 }
 
+export interface StatusInfo {
+  currentProfile: string | null;
+  hostsPath: string;
+  /** current があり、その checksum と実ファイルが食い違っているか */
+  modified: boolean;
+  /** 最後に切り替えた日時。current が無ければ null */
+  updatedAt: string | null;
+  /** 直近のバックアップ。無ければ null */
+  latestBackup: BackupInfo | null;
+}
+
 export interface RestoreResult {
   success: boolean;
   message?: string;

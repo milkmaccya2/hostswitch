@@ -428,4 +428,53 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(backups[0].id).toBe('2026-08-05T14-32-10-123Z');
     });
   });
+
+  describe('getStatus()', () => {
+    it('current 未設定なら no profile として返す', () => {
+      const status = service.getStatus();
+
+      expect(status.currentProfile).toBeNull();
+      expect(status.modified).toBe(false);
+      expect(status.hostsPath).toBe(mocks.config.hostsPath);
+    });
+
+    it('current があり hosts が一致していれば modified=false', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'content');
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'content');
+      // switch 相当: current.json を checksum つきで書く
+      const checksum = require('node:crypto').createHash('md5').update('content').digest('hex');
+      mocks.mockFileSystem.writeJsonSync(mocks.config.currentProfileFile, {
+        profile: 'dev',
+        checksum,
+        updatedAt: '2026-08-05T14:32:10.000Z',
+      });
+
+      const status = service.getStatus();
+
+      expect(status.currentProfile).toBe('dev');
+      expect(status.modified).toBe(false);
+      expect(status.updatedAt).toBe('2026-08-05T14:32:10.000Z');
+    });
+
+    it('hosts が外部で変わっていれば modified=true', () => {
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'changed');
+      mocks.mockFileSystem.writeJsonSync(mocks.config.currentProfileFile, {
+        profile: 'dev',
+        checksum: 'stale',
+        updatedAt: '2026-08-05T14:32:10.000Z',
+      });
+
+      const status = service.getStatus();
+
+      expect(status.modified).toBe(true);
+    });
+
+    it('直近のバックアップを載せる', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_2026-08-07T09-15-00-000Z`, 'x');
+
+      const status = service.getStatus();
+
+      expect(status.latestBackup?.id).toBe('2026-08-07T09-15-00-000Z');
+    });
+  });
 });

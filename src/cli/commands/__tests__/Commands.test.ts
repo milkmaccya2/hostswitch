@@ -8,6 +8,7 @@ import { ListBackupsCommand } from '../ListBackupsCommand';
 import { ListProfilesCommand } from '../ListProfilesCommand';
 import { RestoreBackupCommand } from '../RestoreBackupCommand';
 import { ShowProfileCommand } from '../ShowProfileCommand';
+import { StatusCommand } from '../StatusCommand';
 import { SwitchProfileCommand } from '../SwitchProfileCommand';
 
 describe('Command Classes', () => {
@@ -24,6 +25,7 @@ describe('Command Classes', () => {
       elevate: vi.fn(),
       listBackups: vi.fn(),
       restoreBackup: vi.fn(),
+      getStatus: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
     };
@@ -154,6 +156,19 @@ describe('Command Classes', () => {
       await command.execute();
 
       expect(mockFacade.restoreBackup).toHaveBeenCalledWith(undefined);
+    });
+  });
+
+  describe('StatusCommand', () => {
+    it('facade.getStatus を呼ぶ', async () => {
+      const expected: ICommandResult = { success: true, data: { status: {} } };
+      vi.mocked(mockFacade.getStatus!).mockResolvedValue(expected);
+
+      const command = new StatusCommand(mockFacade as HostSwitchFacade);
+      const result = await command.execute();
+
+      expect(mockFacade.getStatus).toHaveBeenCalled();
+      expect(result).toBe(expected);
     });
   });
 });

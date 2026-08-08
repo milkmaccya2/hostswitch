@@ -189,6 +189,7 @@ All commands are defined using Commander.js:
 - `delete <name>` / `rm <name>`: Remove profile
 - `show <name>` / `cat <name>`: Display profile contents
 - `edit <name>`: Open profile in editor (uses $EDITOR or vi)
+- `status`: Show the current profile, whether hosts drifted from it, last switch time, and latest backup
 - `backups` / `backup-list`: List available hosts backups (newest first)
 - `restore [id]`: Restore the hosts file from a backup, most recent if `id` is omitted (requires sudo)
 
