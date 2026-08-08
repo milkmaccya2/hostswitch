@@ -207,7 +207,7 @@ npm run check
 
 ### テスト
 ```bash
-# ウォッチモードでテスト実行
+# テストを一回実行（vite.config.ts で watch は無効）
 npm test
 
 # テストを一回実行

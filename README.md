@@ -207,7 +207,7 @@ npm run check
 
 ### Testing
 ```bash
-# Run tests in watch mode
+# Run tests once (watch is disabled in vite.config.ts)
 npm test
 
 # Run tests once
