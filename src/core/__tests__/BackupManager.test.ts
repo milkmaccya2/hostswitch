@@ -89,4 +89,99 @@ describe('BackupManager', () => {
       expect(mocks.mockFileSystem.existsSync(result.path!)).toBe(true);
     });
   });
+
+  describe('listBackups()', () => {
+    it('hosts_ で始まるファイルを新しい順に返す', () => {
+      mocks.mockFileSystem.setFile(
+        `${mocks.config.backupDir}/hosts_2026-08-05T14-32-10-123Z`,
+        'old'
+      );
+      mocks.mockFileSystem.setFile(
+        `${mocks.config.backupDir}/hosts_2026-08-07T09-15-00-000Z`,
+        'new'
+      );
+      // バックアップではないファイルは無視する
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/notes.txt`, 'x');
+
+      const backups = backupManager.listBackups();
+
+      expect(backups).toHaveLength(2);
+      expect(backups[0].id).toBe('2026-08-07T09-15-00-000Z');
+      expect(backups[1].id).toBe('2026-08-05T14-32-10-123Z');
+    });
+
+    it('ファイル名から作成日時を復元する', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_2026-08-05T14-32-10-123Z`, 'x');
+
+      const [backup] = backupManager.listBackups();
+
+      expect(backup.createdAt).toEqual(new Date('2026-08-05T14:32:10.123Z'));
+    });
+
+    it('想定外の名前は createdAt を null にする', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_manual-copy`, 'x');
+
+      const [backup] = backupManager.listBackups();
+
+      expect(backup.id).toBe('manual-copy');
+      expect(backup.createdAt).toBeNull();
+    });
+
+    it('バックアップディレクトリが読めなくても空配列を返す', () => {
+      const original = mocks.mockFileSystem.readdirSync;
+      mocks.mockFileSystem.readdirSync = () => {
+        throw new Error('ENOENT');
+      };
+
+      expect(backupManager.listBackups()).toEqual([]);
+
+      mocks.mockFileSystem.readdirSync = original;
+    });
+  });
+
+  describe('getBackup()', () => {
+    it('id で1件取得する', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_2026-08-05T14-32-10-123Z`, 'x');
+
+      expect(backupManager.getBackup('2026-08-05T14-32-10-123Z')).toBeDefined();
+      expect(backupManager.getBackup('nope')).toBeUndefined();
+    });
+  });
+
+  describe('pruneBackups()', () => {
+    it('直近 keep 件を残して古いものを消す', () => {
+      for (const ts of [
+        '2026-08-01T00-00-00-000Z',
+        '2026-08-02T00-00-00-000Z',
+        '2026-08-03T00-00-00-000Z',
+        '2026-08-04T00-00-00-000Z',
+      ]) {
+        mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_${ts}`, 'x');
+      }
+
+      backupManager.pruneBackups(2);
+
+      const remaining = backupManager.listBackups().map((b) => b.id);
+      expect(remaining).toEqual(['2026-08-04T00-00-00-000Z', '2026-08-03T00-00-00-000Z']);
+    });
+
+    it('件数が保持数以下なら何も消さない', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_2026-08-01T00-00-00-000Z`, 'x');
+
+      backupManager.pruneBackups(20);
+
+      expect(backupManager.listBackups()).toHaveLength(1);
+    });
+
+    it('削除に失敗しても止まらない', () => {
+      for (const ts of ['2026-08-01T00-00-00-000Z', '2026-08-02T00-00-00-000Z']) {
+        mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_${ts}`, 'x');
+      }
+      mocks.mockFileSystem.unlinkSync = () => {
+        throw new Error('locked');
+      };
+
+      expect(() => backupManager.pruneBackups(1)).not.toThrow();
+    });
+  });
 });

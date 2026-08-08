@@ -341,6 +341,18 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 [milkmaccya2](https://github.com/milkmaccya2)
 
+## バックアップ
+
+切り替えのたびに現在の hosts ファイルが `~/.hostswitch/backups/` に退避されます。一覧・復元:
+
+```bash
+hostswitch backups          # バックアップ一覧（新しい順）
+hostswitch restore          # 最新のバックアップを復元（要sudo）
+hostswitch restore <id>     # 指定したバックアップを復元
+```
+
+直近20件を保持し、古いものは自動削除されます。復元すると、復元後の hosts が特定のプロファイルと一致するとは限らないため、アクティブなプロファイルは解除されます。
+
 ## 貢献
 
 バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。

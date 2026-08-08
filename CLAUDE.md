@@ -189,6 +189,8 @@ All commands are defined using Commander.js:
 - `delete <name>` / `rm <name>`: Remove profile
 - `show <name>` / `cat <name>`: Display profile contents
 - `edit <name>`: Open profile in editor (uses $EDITOR or vi)
+- `backups` / `backup-list`: List available hosts backups (newest first)
+- `restore [id]`: Restore the hosts file from a backup, most recent if `id` is omitted (requires sudo)
 
 ### Interactive Mode
 Running `hostswitch` without any arguments launches an interactive mode:
@@ -206,7 +208,7 @@ Running `hostswitch` without any arguments launches an interactive mode:
    - Windows: `C:\Windows\System32\drivers\etc\hosts`
 2. **Editor Selection**: Uses `$EDITOR` environment variable, falls back to `vi`
 3. **Profile Validation**: Cannot delete currently active profile
-4. **Backup Strategy**: Only backs up if hosts file was modified or no current profile exists
+4. **Backup Strategy**: Only backs up if hosts file was modified or no current profile exists. The most recent 20 backups are kept; older ones are pruned on each switch/restore. Restore replays a backup through the same atomic write path as switch and clears the current profile afterwards
 5. **TypeScript Configuration**: 
    - Target: ES2022
    - Module: CommonJS

@@ -57,6 +57,63 @@ export class HostSwitchFacade {
     }
   }
 
+  async listBackups(): Promise<ICommandResult> {
+    try {
+      const backups = this.hostSwitchService.getBackups();
+      return {
+        success: true,
+        data: { backups },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to list backups: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+
+  async restoreBackup(id?: string): Promise<ICommandResult> {
+    try {
+      const backups = this.hostSwitchService.getBackups();
+      if (backups.length === 0) {
+        return { success: false, message: 'No backups found' };
+      }
+      if (id && !backups.some((backup) => backup.id === id)) {
+        return { success: false, message: `Backup "${id}" not found` };
+      }
+
+      const args = id ? ['restore', id] : ['restore'];
+
+      // switch と同じく、書き込みには sudo が要る
+      if (this.permissionChecker.requiresSudo(this.hostSwitchService.getHostsPath())) {
+        return this.needsSudoResult(args);
+      }
+
+      const result = this.hostSwitchService.restoreBackup(id);
+      if (result.success) {
+        let message = result.message ?? 'Restored from backup';
+        if (result.backupPath) {
+          message += ' (previous hosts backed up)';
+        }
+        return { success: true, message };
+      }
+      // 事前の requiresSudo チェックは通ったが、実際の書き込みで権限が
+      // 足りなかった場合。ここでも昇格に必要な情報を渡す
+      if (result.requiresSudo) {
+        return this.needsSudoResult(args);
+      }
+      return {
+        success: false,
+        message: result.message || 'Failed to restore backup',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to restore backup: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+
   async switchProfile(name: string, options: SwitchOptions = {}): Promise<ICommandResult> {
     const validation = this.validateProfileName(name);
     if (!validation.success) {
@@ -72,13 +129,7 @@ export class HostSwitchFacade {
       }
 
       if (this.permissionChecker.requiresSudo(this.hostSwitchService.getHostsPath())) {
-        return {
-          success: false,
-          requiresSudo: true,
-          sudoCommand: `sudo hostswitch switch ${name}`,
-          sudoArgs: ['switch', name],
-          message: 'This operation requires sudo privileges',
-        };
+        return this.needsSudoResult(['switch', name]);
       }
 
       const result = await this.hostSwitchService.switchProfile(name, options);
@@ -95,12 +146,15 @@ export class HostSwitchFacade {
           message,
           data: { switchResult: result },
         };
-      } else {
-        return {
-          success: false,
-          message: result.message || 'Failed to switch profile',
-        };
       }
+      // 事前チェックは通ったが実際の書き込みで権限が足りなかった場合
+      if (result.requiresSudo) {
+        return this.needsSudoResult(['switch', name]);
+      }
+      return {
+        success: false,
+        message: result.message || 'Failed to switch profile',
+      };
     } catch (error) {
       return {
         success: false,
@@ -251,6 +305,17 @@ export class HostSwitchFacade {
       return 'Profile name cannot be empty';
     }
     return this.hostSwitchService.isValidProfileName(input) ? true : INVALID_PROFILE_NAME_MESSAGE;
+  }
+
+  /** 昇格が必要なときに UI へ返す結果。sudoArgs は elevate にそのまま渡る */
+  private needsSudoResult(args: string[]): ICommandResult {
+    return {
+      success: false,
+      requiresSudo: true,
+      sudoCommand: `sudo hostswitch ${args.join(' ')}`,
+      sudoArgs: args,
+      message: 'This operation requires sudo privileges',
+    };
   }
 
   private validateProfileName(name: string): ICommandResult {

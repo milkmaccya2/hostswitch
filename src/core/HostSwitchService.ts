@@ -1,4 +1,5 @@
 import type {
+  BackupInfo,
   CreateProfileResult,
   DnsFlushResult,
   HostSwitchConfig,
@@ -6,6 +7,7 @@ import type {
   IFileSystem,
   ILogger,
   ProfileInfo,
+  RestoreResult,
   SwitchOptions,
   SwitchResult,
 } from '../interfaces';
@@ -53,6 +55,60 @@ export class HostSwitchService {
     return this.profileManager.getProfiles(currentProfile);
   }
 
+  getBackups(): BackupInfo[] {
+    return this.backupManager.listBackups();
+  }
+
+  /**
+   * バックアップから hosts を復元する。id を省略すると最新を使う。
+   * switch と同じく、書き込みはアトミック置換で行い、書けない場合は
+   * requiresSudo を返して呼び出し側に昇格させる。
+   *
+   * 復元した hosts は特定のプロファイルと一致するとは限らないので、
+   * 復元後は current プロファイルを解除する。
+   */
+  restoreBackup(id?: string): RestoreResult {
+    const backups = this.backupManager.listBackups();
+    if (backups.length === 0) {
+      return { success: false, message: 'No backups found.' };
+    }
+
+    const target = id ? backups.find((backup) => backup.id === id) : backups[0];
+    if (!target) {
+      return { success: false, message: `Backup '${id}' not found.` };
+    }
+
+    // 復元前の hosts も退避しておく。取れないなら進めない
+    let backupPath: string | undefined;
+    if (this.currentProfileManager.isHostsModified() || !this.getCurrentProfile()) {
+      const backup = this.backupManager.backupHosts();
+      if (!backup.success) {
+        return {
+          success: false,
+          message: `Aborted: could not back up the current hosts file (${backup.message}).`,
+        };
+      }
+      backupPath = backup.path;
+    }
+
+    try {
+      this.replaceHostsFile(target.path);
+      this.currentProfileManager.clearCurrentProfile();
+      this.backupManager.pruneBackups();
+      return {
+        success: true,
+        message: `Restored hosts from backup '${target.id}'.`,
+        backupPath,
+      };
+    } catch (err) {
+      const error = err as NodeJS.ErrnoException;
+      if (error.code === 'EACCES') {
+        return { success: false, message: 'Permission denied. Run with sudo.', requiresSudo: true };
+      }
+      return { success: false, message: `Error restoring backup: ${error.message}` };
+    }
+  }
+
   createProfile(name: string, fromCurrent: boolean = false): CreateProfileResult {
     return this.profileManager.createProfile(name, fromCurrent);
   }
@@ -94,6 +150,7 @@ export class HostSwitchService {
       const profilePath = this.profileManager.getProfilePath(name);
       this.replaceHostsFile(profilePath);
       this.currentProfileManager.setCurrentProfile(name);
+      this.backupManager.pruneBackups();
 
       // hostsの書き換えが済んだ後に行う。フラッシュが失敗しても切り替えは成功
       const dnsFlush = await this.flushDnsCache(options);

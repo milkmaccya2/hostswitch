@@ -125,6 +125,28 @@ function parseCommands() {
       });
     });
 
+  // Backup list command
+  program
+    .command('backups')
+    .alias('backup-list')
+    .description('List available hosts backups')
+    .action(async () => {
+      const ui = new CliUserInterface(logger, elevate);
+      const controller = new CliController(facade, ui);
+      await controller.executeCommand('backup-list');
+    });
+
+  // Restore command
+  program
+    .command('restore')
+    .argument('[id]', 'Backup id to restore (defaults to the most recent)')
+    .description('Restore the hosts file from a backup (requires sudo)')
+    .action(async (id: string | undefined) => {
+      const ui = new CliUserInterface(logger, elevate);
+      const controller = new CliController(facade, ui);
+      await controller.executeCommand('restore', { backupId: id });
+    });
+
   return program;
 }
 

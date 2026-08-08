@@ -99,6 +99,23 @@ export interface BackupResult {
   message?: string;
 }
 
+export interface BackupInfo {
+  /** restore で指定する識別子。ファイル名のタイムスタンプ部分 */
+  id: string;
+  /** バックアップファイルの絶対パス */
+  path: string;
+  /** バックアップが作られた日時。ファイル名から復元できない場合は null */
+  createdAt: Date | null;
+}
+
+export interface RestoreResult {
+  success: boolean;
+  message?: string;
+  /** 復元前の hosts を退避した先 */
+  backupPath?: string;
+  requiresSudo?: boolean;
+}
+
 export interface CreateProfileResult {
   success: boolean;
   message?: string;
