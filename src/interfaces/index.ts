@@ -175,6 +175,8 @@ export interface Choice<T> {
 
 export interface IUserInterface {
   showMessage(message: string, type?: MessageType): void;
+  /** 対話的な確認プロンプトを出せるか（TTY があるか等） */
+  canConfirmInteractively(): boolean;
   promptConfirm(message: string): Promise<boolean>;
   promptSelect<T>(message: string, choices: Choice<T>[]): Promise<T>;
   promptInput(message: string, validator?: (input: string) => boolean | string): Promise<string>;

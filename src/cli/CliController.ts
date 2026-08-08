@@ -90,7 +90,7 @@ export class CliController {
         if (!params.name) {
           throw new Error('Profile name is required for delete command');
         }
-        return new DeleteProfileCommand(this.facade, params.name, params.force || false);
+        return new DeleteProfileCommand(this.facade, params.name, params.force || false, this.ui);
 
       default:
         throw new Error(`Unknown command type: ${type}`);

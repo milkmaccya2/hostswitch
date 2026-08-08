@@ -32,6 +32,10 @@ export class InteractiveUserInterface implements IUserInterface {
     }
   }
 
+  canConfirmInteractively(): boolean {
+    return true;
+  }
+
   async promptConfirm(message: string): Promise<boolean> {
     const answer = await inquirer.prompt([
       {
@@ -138,25 +142,33 @@ export class InteractiveUserInterface implements IUserInterface {
     switch (action) {
       case 'list':
         await this.handleListProfiles();
-        return false; // Continue interactive mode
+        return false;
       case 'switch':
+        // switch は sudo で自分自身を再実行してプロセスが置き換わるため、
+        // ここで戻ってきてもメニューを続ける意味がない。終了する
         await this.handleSwitchProfile();
-        return true; // Exit after action
+        return true;
       case 'create':
         await this.handleCreateProfile();
-        return true; // Exit after action
+        return false;
       case 'edit':
         await this.handleEditProfile();
-        return true; // Exit after action
+        return false;
       case 'show':
         await this.handleShowProfile();
-        return true; // Exit after action
+        // 表示内容がメニューで流れないよう、続行前に一拍置く
+        await this.waitForEnter();
+        return false;
       case 'delete':
         await this.handleDeleteProfile();
-        return true; // Exit after action
+        return false;
       default:
         return false;
     }
+  }
+
+  private async waitForEnter(): Promise<void> {
+    await this.promptInput('Press Enter to continue');
   }
 
   private async handleListProfiles(): Promise<void> {
@@ -294,7 +306,9 @@ export class InteractiveUserInterface implements IUserInterface {
     const confirmed = await this.promptConfirm(`Are you sure you want to delete "${profileName}"?`);
 
     if (confirmed) {
-      const result = await this.facade.deleteProfile(profileName);
+      // ここで既に確認済みなので force=true で実行する。false のままだと
+      // Facade が requiresConfirmation を返し、確認したのに削除されない
+      const result = await this.facade.deleteProfile(profileName, true);
       if (result.success) {
         this.showMessage(result.message || 'Profile deleted successfully', 'success');
       } else {

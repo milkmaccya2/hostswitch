@@ -291,12 +291,19 @@ describe('Integration Tests', () => {
       ]);
     });
 
-    it('should throw errors for unsupported operations in CLI UI', async () => {
-      await expect(cliUI.promptConfirm('Are you sure?')).rejects.toThrow(
-        'not supported in CLI mode'
-      );
+    it('CLI UI は select/input を非対話としてエラーにする', async () => {
       await expect(cliUI.promptSelect('Choose:', [])).rejects.toThrow('not supported in CLI mode');
       await expect(cliUI.promptInput('Enter:')).rejects.toThrow('not supported in CLI mode');
+    });
+
+    it('CLI UI は TTY が無ければ確認プロンプトを出せない', async () => {
+      const original = process.stdin.isTTY;
+      Object.defineProperty(process.stdin, 'isTTY', { value: false, configurable: true });
+
+      expect(cliUI.canConfirmInteractively()).toBe(false);
+      await expect(cliUI.promptConfirm('Are you sure?')).rejects.toThrow('--force');
+
+      Object.defineProperty(process.stdin, 'isTTY', { value: original, configurable: true });
     });
   });
 });

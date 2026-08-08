@@ -67,8 +67,8 @@ describe('User Interface Classes', () => {
     });
 
     describe('interactive methods', () => {
-      it('should throw error for promptConfirm', async () => {
-        await expect(cliUI.promptConfirm('Confirm?')).rejects.toThrow('not supported in CLI mode');
+      it('TTY が無ければ promptConfirm はエラー（--force を促す）', async () => {
+        await expect(cliUI.promptConfirm('Confirm?')).rejects.toThrow('--force');
       });
 
       it('should throw error for promptSelect', async () => {
@@ -160,6 +160,10 @@ describe('User Interface Classes', () => {
 
     beforeEach(() => {
       interactiveUI = new InteractiveUserInterface(mockFacade, mockLogger);
+      // run() はメニューが 'exit' を返すまで回り続ける。モックを積み忘れると
+      // 無限ループ→OOM でプロセスごと落ちるため、既定値を 'exit' にしておく。
+      // 各テストは mockResolvedValueOnce を積み、消費し切ると自動で抜ける（#106）
+      vi.mocked(inquirer.prompt).mockResolvedValue({ selected: 'exit' });
     });
 
     describe('showMessage', () => {
@@ -274,7 +278,8 @@ describe('User Interface Classes', () => {
 
         await interactiveUI.run();
 
-        expect(inquirer.prompt).toHaveBeenCalledTimes(2);
+        // edit(2) の後もメニューに戻り、既定の exit で抜ける(3回目)
+        expect(inquirer.prompt).toHaveBeenCalledTimes(3);
         expect(mockFacade.switchProfile).not.toHaveBeenCalled();
       });
     });
@@ -464,6 +469,58 @@ describe('User Interface Classes', () => {
         await interactiveUI.handleCommandResult(result);
 
         expect(mockFacade.elevate).toHaveBeenCalledWith(['switch', 'complex profile name']);
+      });
+    });
+
+    describe('run() - メニュー継続（#87）', () => {
+      it('list の後もメニューに戻る（1操作で終了しない）', async () => {
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: { profiles: [{ name: 'dev', isCurrent: false }] },
+        });
+        // list → メニュー(既定 exit)。list が実行され、その後メニューに戻る
+        vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selected: 'list' });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.listProfiles).toHaveBeenCalled();
+        // list(1) の後、既定の exit を引くメニュー(2)が出る = 1操作で終了していない
+        expect(inquirer.prompt).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    describe('run() - delete（#87）', () => {
+      it('確認して Yes なら force=true で削除する', async () => {
+        // 以前は force を渡さず、確認したのに削除されないバグがあった
+        vi.mocked(mockFacade.getDeletableProfiles).mockReturnValue([
+          { name: 'dev', isCurrent: false },
+        ]);
+        vi.mocked(mockFacade.deleteProfile).mockResolvedValue({
+          success: true,
+          message: 'Profile "dev" deleted successfully',
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'delete' })
+          .mockResolvedValueOnce({ selected: 'dev' })
+          .mockResolvedValueOnce({ confirmed: true });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.deleteProfile).toHaveBeenCalledWith('dev', true);
+      });
+
+      it('確認で No なら削除しない', async () => {
+        vi.mocked(mockFacade.getDeletableProfiles).mockReturnValue([
+          { name: 'dev', isCurrent: false },
+        ]);
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'delete' })
+          .mockResolvedValueOnce({ selected: 'dev' })
+          .mockResolvedValueOnce({ confirmed: false });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.deleteProfile).not.toHaveBeenCalled();
       });
     });
   });
