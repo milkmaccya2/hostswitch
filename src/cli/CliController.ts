@@ -13,6 +13,7 @@ export interface CommandParams {
   name?: string;
   fromCurrent?: boolean;
   force?: boolean;
+  flushDns?: boolean;
 }
 
 export class CliController {
@@ -49,7 +50,7 @@ export class CliController {
         if (!params.name) {
           throw new Error('Profile name is required for switch command');
         }
-        return new SwitchProfileCommand(this.facade, params.name);
+        return new SwitchProfileCommand(this.facade, params.name, params.flushDns);
 
       case 'edit':
         if (!params.name) {

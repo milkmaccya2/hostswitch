@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { DnsFlushResult } from '../../interfaces';
 import { HostSwitchService } from '../HostSwitchService';
 import { createTestMocks, createTestProfiles, setCurrentProfile } from './setup';
 
@@ -219,6 +220,87 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(leftovers.some((p) => p.includes('.hostswitch-'))).toBe(true);
 
       mocks.mockFileSystem.renameSync = originalRenameSync;
+    });
+  });
+
+  describe('DNSキャッシュのフラッシュ', () => {
+    const makeFlusher = (result: DnsFlushResult | Error) => ({
+      flush: vi.fn(async () => {
+        if (result instanceof Error) throw result;
+        return result;
+      }),
+    });
+
+    const serviceWith = (flusher: { flush: ReturnType<typeof vi.fn> }) =>
+      new HostSwitchService(
+        mocks.mockFileSystem,
+        mocks.mockLogger,
+        mocks.config,
+        mocks.mockPermissionChecker,
+        flusher
+      );
+
+    it('切り替え成功後にフラッシュを実行する', async () => {
+      const flusher = makeFlusher({ attempted: true, success: true, command: 'dscacheutil' });
+      const svc = serviceWith(flusher);
+      svc.createProfile('dev');
+
+      const result = await svc.switchProfile('dev');
+
+      expect(result.success).toBe(true);
+      expect(flusher.flush).toHaveBeenCalledOnce();
+      expect(result.dnsFlush).toMatchObject({ attempted: true, success: true });
+    });
+
+    it('フラッシュが失敗しても切り替えは成功扱いにし、警告を出す', async () => {
+      const flusher = makeFlusher({
+        attempted: true,
+        success: false,
+        command: 'dscacheutil -flushcache',
+        message: 'exited with code 1',
+      });
+      const svc = serviceWith(flusher);
+      svc.createProfile('dev');
+
+      const result = await svc.switchProfile('dev');
+
+      expect(result.success).toBe(true);
+      expect(svc.getCurrentProfile()).toBe('dev');
+      expect(mocks.mockLogger.hasMessage('Could not flush the DNS cache', 'warn')).toBe(true);
+    });
+
+    it('フラッシュが例外を投げても切り替えは成功扱いにする', async () => {
+      const flusher = makeFlusher(new Error('boom'));
+      const svc = serviceWith(flusher);
+      svc.createProfile('dev');
+
+      const result = await svc.switchProfile('dev');
+
+      expect(result.success).toBe(true);
+      expect(result.dnsFlush).toMatchObject({ attempted: true, success: false });
+      expect(mocks.mockLogger.hasMessage('Could not flush the DNS cache', 'warn')).toBe(true);
+    });
+
+    it('flushDns=false ならフラッシュを呼ばない', async () => {
+      const flusher = makeFlusher({ attempted: true, success: true });
+      const svc = serviceWith(flusher);
+      svc.createProfile('dev');
+
+      const result = await svc.switchProfile('dev', { flushDns: false });
+
+      expect(result.success).toBe(true);
+      expect(flusher.flush).not.toHaveBeenCalled();
+      expect(result.dnsFlush).toBeUndefined();
+    });
+
+    it('フラッシャが注入されていなくても切り替えは成功する', async () => {
+      // 既存の呼び出し側（4引数）を壊さないこと
+      service.createProfile('dev');
+
+      const result = await service.switchProfile('dev');
+
+      expect(result.success).toBe(true);
+      expect(result.dnsFlush).toBeUndefined();
     });
   });
 

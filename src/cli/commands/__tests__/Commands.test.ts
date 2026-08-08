@@ -75,7 +75,7 @@ describe('Command Classes', () => {
       const result = await command.execute();
 
       expect(result).toBe(expectedResult);
-      expect(mockFacade.switchProfile).toHaveBeenCalledWith('staging');
+      expect(mockFacade.switchProfile).toHaveBeenCalledWith('staging', { flushDns: undefined });
     });
   });
 

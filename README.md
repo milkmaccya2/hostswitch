@@ -22,6 +22,7 @@ HostSwitch is a CLI tool that makes it easy to switch between different hosts co
 
 - ✅ **Multiple hosts profile management** - For development, staging, production, etc.
 - 💾 **Automatic backup** - Saves current hosts before switching
+- 🔄 **DNS cache flush** - Flushes the OS DNS cache after switching, so changes take effect immediately
 - 🎨 **Colorful output** - Clear status visibility
 - ⚡ **Simple CLI** - Easy-to-remember commands
 - 🔒 **Safe operations** - Explicit sudo requirements

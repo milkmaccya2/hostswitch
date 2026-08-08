@@ -11,6 +11,7 @@ import { InteractiveUserInterface } from './cli/ui/InteractiveUserInterface';
 import { createConfig } from './config';
 import { HostSwitchService } from './core/HostSwitchService';
 import { ChalkLogger } from './infrastructure/ChalkLogger';
+import { DnsCacheFlusher } from './infrastructure/DnsCacheFlusher';
 import { FileSystemAdapter } from './infrastructure/FileSystemAdapter';
 import { PermissionChecker } from './infrastructure/PermissionChecker';
 import { ProcessManager } from './infrastructure/ProcessManager';
@@ -21,9 +22,16 @@ const fileSystem = new FileSystemAdapter();
 const logger = new ChalkLogger();
 const processManager = new ProcessManager();
 const permissionChecker = new PermissionChecker();
+const dnsCacheFlusher = new DnsCacheFlusher();
 
 // サービス層の初期化
-const hostSwitchService = new HostSwitchService(fileSystem, logger, config, permissionChecker);
+const hostSwitchService = new HostSwitchService(
+  fileSystem,
+  logger,
+  config,
+  permissionChecker,
+  dnsCacheFlusher
+);
 
 // Facade層の初期化
 const facade = new HostSwitchFacade(hostSwitchService, processManager, permissionChecker);
@@ -68,11 +76,17 @@ function parseCommands() {
     .command('switch')
     .alias('use')
     .argument('<name>', 'Profile name')
+    .option('--no-flush', 'Skip flushing the OS DNS cache after switching')
     .description('Switch to a profile (requires sudo)')
-    .action(async (name: string) => {
+    .action(async (name: string, options: { flush?: boolean }) => {
       const ui = new CliUserInterface(logger);
       const controller = new CliController(facade, ui);
-      await controller.executeCommand('switch', { name });
+      await controller.executeCommand('switch', {
+        name,
+        // commander の --no-flush は options.flush を false にする。
+        // 環境変数でも無効化できるようにする
+        flushDns: options.flush !== false && process.env.HOSTSWITCH_NO_DNS_FLUSH !== 'true',
+      });
     });
 
   // Show profile command
