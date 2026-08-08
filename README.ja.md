@@ -346,6 +346,16 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 バグ報告や機能追加のリクエストは[GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues)で受け付けています。
 開発環境のセットアップ手順やテスト方針は[CONTRIBUTING.md](CONTRIBUTING.md)（英語）を参照してください。
 
+## 更新通知
+
+新しいバージョンの確認は1日1回までです。無効にするには:
+
+```bash
+export HOSTSWITCH_NO_UPDATE_CHECK=true
+```
+
+root実行中は自動的にスキップされるので、`sudo hostswitch switch` がroot所有の設定ファイルを残すことはありません。
+
 ## セキュリティ
 
 セキュリティ上の問題を見つけた場合は、公開Issueではなく[SECURITY.md](SECURITY.md)（英語）の手順に従って報告してください。
