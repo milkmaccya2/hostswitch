@@ -1,3 +1,4 @@
+import inquirer from 'inquirer';
 import type {
   BackupInfo,
   Choice,
@@ -34,10 +35,19 @@ export class CliUserInterface implements IUserInterface {
     }
   }
 
-  async promptConfirm(_message: string): Promise<boolean> {
-    throw new Error(
-      'Confirmation prompts are not supported in CLI mode. Use command line arguments instead.'
-    );
+  canConfirmInteractively(): boolean {
+    // TTY が無い（CI・パイプ）場合は対話できないので false
+    return Boolean(process.stdin.isTTY);
+  }
+
+  async promptConfirm(message: string): Promise<boolean> {
+    if (!this.canConfirmInteractively()) {
+      throw new Error('Confirmation prompts are not supported without a TTY. Use --force instead.');
+    }
+    const answer = await inquirer.prompt([
+      { type: 'confirm', name: 'confirmed', message, default: false },
+    ]);
+    return answer.confirmed;
   }
 
   async promptSelect<T>(_message: string, _choices: Choice<T>[]): Promise<T> {

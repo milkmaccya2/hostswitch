@@ -171,4 +171,63 @@ describe('Command Classes', () => {
       expect(result).toBe(expected);
     });
   });
+
+  describe('DeleteProfileCommand', () => {
+    const makeUi = (canConfirm: boolean, confirmValue = true) =>
+      ({
+        canConfirmInteractively: vi.fn().mockReturnValue(canConfirm),
+        promptConfirm: vi.fn().mockResolvedValue(confirmValue),
+        showMessage: vi.fn(),
+        promptSelect: vi.fn(),
+        promptInput: vi.fn(),
+        handleCommandResult: vi.fn(),
+      }) as unknown as import('../../../interfaces').IUserInterface & {
+        canConfirmInteractively: ReturnType<typeof vi.fn>;
+        promptConfirm: ReturnType<typeof vi.fn>;
+      };
+
+    it('--force ならそのまま削除する', async () => {
+      vi.mocked(mockFacade.deleteProfile!).mockResolvedValue({ success: true });
+
+      const command = new DeleteProfileCommand(mockFacade as HostSwitchFacade, 'dev', true);
+      await command.execute();
+
+      expect(mockFacade.deleteProfile).toHaveBeenCalledWith('dev', true);
+    });
+
+    it('TTY があれば確認して Yes なら削除する', async () => {
+      vi.mocked(mockFacade.deleteProfile!).mockResolvedValue({ success: true });
+      const ui = makeUi(true, true);
+
+      const command = new DeleteProfileCommand(mockFacade as HostSwitchFacade, 'dev', false, ui);
+      await command.execute();
+
+      expect(ui.promptConfirm).toHaveBeenCalled();
+      expect(mockFacade.deleteProfile).toHaveBeenCalledWith('dev', true);
+    });
+
+    it('確認で No なら削除しない', async () => {
+      const ui = makeUi(true, false);
+
+      const command = new DeleteProfileCommand(mockFacade as HostSwitchFacade, 'dev', false, ui);
+      const result = await command.execute();
+
+      expect(mockFacade.deleteProfile).not.toHaveBeenCalled();
+      expect(result.message).toContain('cancelled');
+    });
+
+    it('非TTYでは確認せず force=false で委譲する', async () => {
+      vi.mocked(mockFacade.deleteProfile!).mockResolvedValue({
+        success: false,
+        requiresConfirmation: true,
+      });
+      const ui = makeUi(false);
+
+      const command = new DeleteProfileCommand(mockFacade as HostSwitchFacade, 'dev', false, ui);
+      await command.execute();
+
+      expect(ui.promptConfirm).not.toHaveBeenCalled();
+      expect(mockFacade.deleteProfile).toHaveBeenCalledWith('dev', false);
+    });
+  });
 });
