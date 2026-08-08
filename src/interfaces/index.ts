@@ -61,6 +61,9 @@ export interface IPermissionChecker {
   rerunWithSudo(args: string[]): Promise<SudoResult>;
 }
 
+/** sudo で自分自身を再実行する。実装は PermissionChecker.rerunWithSudo 一箇所のみ */
+export type Elevate = (args: string[]) => Promise<SudoResult>;
+
 export interface SudoResult {
   success: boolean;
   message?: string;

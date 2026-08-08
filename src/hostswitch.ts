@@ -25,16 +25,13 @@ const permissionChecker = new PermissionChecker();
 const dnsCacheFlusher = new DnsCacheFlusher();
 
 // サービス層の初期化
-const hostSwitchService = new HostSwitchService(
-  fileSystem,
-  logger,
-  config,
-  permissionChecker,
-  dnsCacheFlusher
-);
+const hostSwitchService = new HostSwitchService(fileSystem, logger, config, dnsCacheFlusher);
 
 // Facade層の初期化
 const facade = new HostSwitchFacade(hostSwitchService, processManager, permissionChecker);
+
+// sudo 再実行の唯一の実装。CLI / インタラクティブの両方がこれを使う
+const elevate = (args: string[]) => permissionChecker.rerunWithSudo(args);
 
 // コマンドライン引数の解析
 function parseCommands() {
@@ -51,7 +48,7 @@ function parseCommands() {
     .alias('ls')
     .description('List all profiles')
     .action(async () => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('list');
     });
@@ -63,7 +60,7 @@ function parseCommands() {
     .option('--from-current', 'Copy current hosts file content')
     .description('Create a new profile')
     .action(async (name: string, options: { fromCurrent?: boolean }) => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('create', {
         name,
@@ -79,7 +76,7 @@ function parseCommands() {
     .option('--no-flush', 'Skip flushing the OS DNS cache after switching')
     .description('Switch to a profile (requires sudo)')
     .action(async (name: string, options: { flush?: boolean }) => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('switch', {
         name,
@@ -96,7 +93,7 @@ function parseCommands() {
     .argument('<name>', 'Profile name')
     .description('Show profile contents')
     .action(async (name: string) => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('show', { name });
     });
@@ -107,7 +104,7 @@ function parseCommands() {
     .argument('<name>', 'Profile name')
     .description('Edit a profile')
     .action(async (name: string) => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('edit', { name });
     });
@@ -120,7 +117,7 @@ function parseCommands() {
     .option('--force', 'Skip confirmation')
     .description('Delete a profile')
     .action(async (name: string, options: { force?: boolean }) => {
-      const ui = new CliUserInterface(logger);
+      const ui = new CliUserInterface(logger, elevate);
       const controller = new CliController(facade, ui);
       await controller.executeCommand('delete', {
         name,

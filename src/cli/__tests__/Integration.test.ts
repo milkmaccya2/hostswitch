@@ -27,6 +27,7 @@ describe('Integration Tests', () => {
   let facade: HostSwitchFacade;
   let controller: CliController;
   let cliUI: CliUserInterface;
+  let mockElevate: ReturnType<typeof vi.fn>;
   let interactiveUI: InteractiveUserInterface;
 
   const mockConfig: HostSwitchConfig = {
@@ -76,16 +77,12 @@ describe('Integration Tests', () => {
       rerunWithSudo: vi.fn(),
     };
 
-    hostSwitchService = new HostSwitchService(
-      mockFileSystem,
-      mockLogger,
-      mockConfig,
-      mockPermissionChecker
-    );
+    hostSwitchService = new HostSwitchService(mockFileSystem, mockLogger, mockConfig);
 
     facade = new HostSwitchFacade(hostSwitchService, mockProcessManager, mockPermissionChecker);
 
-    cliUI = new CliUserInterface(mockLogger);
+    mockElevate = vi.fn().mockResolvedValue({ success: true, message: 'Completed successfully' });
+    cliUI = new CliUserInterface(mockLogger, mockElevate);
     interactiveUI = new InteractiveUserInterface(facade, mockLogger);
     controller = new CliController(facade, cliUI);
 
@@ -129,7 +126,7 @@ describe('Integration Tests', () => {
       // 1. Create profile
       await controller.executeCommand('create', { name: 'test-profile', fromCurrent: false });
       expect(mockLogger.success).toHaveBeenCalledWith(
-        'Profile \"test-profile\" created successfully'
+        'Profile "test-profile" created successfully'
       );
 
       // 2. List profiles
@@ -164,7 +161,8 @@ describe('Integration Tests', () => {
       expect(mockLogger.info).toHaveBeenCalledWith(
         'This operation requires sudo privileges. Rerunning with sudo...'
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('(Skipped in test environment)');
+      // テスト環境かどうかの判定は本番コードから消し、昇格関数の注入で制御する
+      expect(mockElevate).toHaveBeenCalledWith(['switch', 'staging']);
     });
 
     it('should handle complex sudo scenarios in interactive mode', async () => {
@@ -177,7 +175,7 @@ describe('Integration Tests', () => {
         message: 'This operation requires sudo privileges.',
       });
 
-      vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
+      vi.spyOn(facade, 'elevate').mockResolvedValue({
         success: true,
         message: 'Successfully switched to production with sudo',
       });
@@ -187,7 +185,7 @@ describe('Integration Tests', () => {
       expect(result.requiresSudo).toBe(true);
 
       // Now test the sudo execution
-      const sudoResult = await facade.switchProfileWithSudo('production');
+      const sudoResult = await facade.elevate(['switch', 'production']);
       expect(sudoResult.success).toBe(true);
       expect(sudoResult.message).toBe('Successfully switched to production with sudo');
     });
@@ -201,7 +199,7 @@ describe('Integration Tests', () => {
         message: 'This operation requires sudo privileges.',
       });
 
-      vi.spyOn(facade, 'switchProfileWithSudo').mockResolvedValue({
+      vi.spyOn(facade, 'elevate').mockResolvedValue({
         success: false,
         message: 'Permission denied even with sudo',
       });
@@ -209,7 +207,7 @@ describe('Integration Tests', () => {
       const result = await facade.switchProfile('staging');
       expect(result.requiresSudo).toBe(true);
 
-      const sudoResult = await facade.switchProfileWithSudo('staging');
+      const sudoResult = await facade.elevate(['switch', 'staging']);
       expect(sudoResult.success).toBe(false);
       expect(sudoResult.message).toBe('Permission denied even with sudo');
     });

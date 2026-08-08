@@ -308,15 +308,19 @@ export class InteractiveUserInterface implements IUserInterface {
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
     this.showMessage('This operation requires sudo privileges.', 'warning');
 
-    // 表示用の sudoCommand は形が変わりうるので、実行する操作は sudoArgs だけで決める
-    const [command, profileName] = result.sudoArgs ?? [];
-    if (command !== 'switch' || !profileName) {
+    // 実行する操作は sudoArgs だけで決める。表示用の sudoCommand は
+    // 絶対パスや node 経由で形が変わるので判断材料にしない。
+    // sudoArgs を設定するのは Facade だけなので、ここでコマンド名を
+    // 見分ける必要はないが、壊れた値で再実行はしない
+    const sudoArgs = result.sudoArgs;
+    if (!sudoArgs?.length || sudoArgs.some((arg) => arg === '')) {
+      this.showMessage('No sudo command provided', 'error');
       return;
     }
 
-    this.showMessage(`Switching to profile "${profileName}" with sudo...`, 'info');
+    this.showMessage(`Rerunning \`${sudoArgs.join(' ')}\` with sudo...`, 'info');
     try {
-      const sudoResult = await this.facade.switchProfileWithSudo(profileName);
+      const sudoResult = await this.facade.elevate(sudoArgs);
       await this.handleCommandResult(sudoResult);
     } catch (error) {
       this.showMessage(

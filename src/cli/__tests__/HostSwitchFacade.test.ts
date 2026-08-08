@@ -25,6 +25,7 @@ describe('HostSwitchFacade', () => {
     getProfilePath: ReturnType<typeof vi.fn>;
     getCurrentProfile: ReturnType<typeof vi.fn>;
     getConfig: ReturnType<typeof vi.fn>;
+    getHostsPath: ReturnType<typeof vi.fn>;
     isProfileApplied: ReturnType<typeof vi.fn>;
     isValidProfileName: ReturnType<typeof vi.fn>;
   };
@@ -43,6 +44,7 @@ describe('HostSwitchFacade', () => {
       getProfilePath: vi.fn(),
       getCurrentProfile: vi.fn(),
       getConfig: vi.fn().mockReturnValue({ hostsPath: '/etc/hosts' }),
+      getHostsPath: vi.fn().mockReturnValue('/etc/hosts'),
       isProfileApplied: vi.fn().mockReturnValue(true),
       isValidProfileName: vi.fn((name: string) => /^[a-zA-Z0-9_-]+$/.test(name)),
     };
@@ -182,7 +184,7 @@ describe('HostSwitchFacade', () => {
     });
   });
 
-  describe('switchProfileWithSudo', () => {
+  describe('elevate', () => {
     it('should execute with sudo successfully', async () => {
       const sudoResult: SudoResult = {
         success: true,
@@ -190,7 +192,7 @@ describe('HostSwitchFacade', () => {
       };
       vi.mocked(mockPermissionChecker.rerunWithSudo).mockResolvedValue(sudoResult);
 
-      const result = await facade.switchProfileWithSudo('staging');
+      const result = await facade.elevate(['switch', 'staging']);
 
       expect(result.success).toBe(true);
       expect(result.message).toBe('Switched successfully');
@@ -204,10 +206,10 @@ describe('HostSwitchFacade', () => {
       };
       vi.mocked(mockPermissionChecker.rerunWithSudo).mockResolvedValue(sudoResult);
 
-      const result = await facade.switchProfileWithSudo('staging');
+      const result = await facade.elevate(['switch', 'staging']);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Failed to switch profile: Permission denied');
+      expect(result.message).toBe('Failed to run with sudo: Permission denied');
     });
   });
 

@@ -1,6 +1,6 @@
-import { spawnSync } from 'node:child_process';
 import type {
   Choice,
+  Elevate,
   ICommandResult,
   ILogger,
   IUserInterface,
@@ -9,7 +9,11 @@ import type {
 } from '../../interfaces';
 
 export class CliUserInterface implements IUserInterface {
-  constructor(private logger: ILogger) {}
+  constructor(
+    private logger: ILogger,
+    /** sudo 再実行。渡されない場合は昇格せず、案内だけ出す */
+    private elevate?: Elevate
+  ) {}
 
   showMessage(message: string, type: MessageType = 'info'): void {
     switch (type) {
@@ -64,8 +68,6 @@ export class CliUserInterface implements IUserInterface {
   }
 
   private async handleSudoRequired(result: ICommandResult): Promise<void> {
-    this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
-
     // 何を sudo で実行するかは呼び出し側が明示する。ここで現在の引数を流用すると
     // hosts の書き換えを伴わない操作までそのまま root で再実行されてしまう
     if (!result.sudoArgs) {
@@ -73,34 +75,26 @@ export class CliUserInterface implements IUserInterface {
       return;
     }
 
-    if (this.isTestEnvironment()) {
-      this.showMessage('(Skipped in test environment)', 'info');
+    if (!this.elevate) {
+      // 昇格手段が渡されていない場合は、実行すべきコマンドを案内するに留める
+      this.showMessage(
+        `This operation requires sudo privileges. Run: ${result.sudoCommand ?? 'sudo hostswitch ' + result.sudoArgs.join(' ')}`,
+        'warning'
+      );
       return;
     }
 
-    await this.executeSudo(result.sudoArgs);
-  }
+    this.showMessage('This operation requires sudo privileges. Rerunning with sudo...', 'info');
 
-  private isTestEnvironment(): boolean {
-    return (
-      process.env.NODE_ENV === 'test' ||
-      process.env.VITEST === 'true' ||
-      Boolean(process.env.npm_lifecycle_event?.includes('test'))
-    );
-  }
-
-  private async executeSudo(args: string[]): Promise<void> {
-    // シェルを介さず引数を配列で渡す（プロファイル名に空白等が入っても壊れない）
-    const result = spawnSync('sudo', [process.argv[0], process.argv[1], ...args], {
-      stdio: 'inherit',
-    });
-
-    if (result.error || result.status !== 0) {
-      this.showMessage('Failed to execute with sudo', 'error');
+    const sudoResult = await this.elevate(result.sudoArgs);
+    if (!sudoResult.success) {
+      this.showMessage(sudoResult.message || 'Failed to execute with sudo', 'error');
       process.exit(1);
     }
 
-    process.exit(0);
+    if (sudoResult.message) {
+      this.showMessage(sudoResult.message, 'success');
+    }
   }
 
   private handleConfirmationRequired(): void {
