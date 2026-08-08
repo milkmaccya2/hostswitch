@@ -177,7 +177,7 @@ All data is stored in `~/.hostswitch/`:
 - Switching profiles requires sudo/admin privileges (modifies system hosts file)
 - Automatic backup prevents data loss
 - Checksum validation detects external modifications
-- Profile name validation prevents file system issues on create and delete
+- Profile name validation prevents path traversal and file system issues
 
 ## CLI Commands
 
