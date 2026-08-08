@@ -28,6 +28,8 @@ describe('HostSwitchFacade', () => {
     getHostsPath: ReturnType<typeof vi.fn>;
     isProfileApplied: ReturnType<typeof vi.fn>;
     isValidProfileName: ReturnType<typeof vi.fn>;
+    getBackups: ReturnType<typeof vi.fn>;
+    restoreBackup: ReturnType<typeof vi.fn>;
   };
   let _mockLogger: ILogger;
   let mockProcessManager: IProcessManager;
@@ -47,6 +49,8 @@ describe('HostSwitchFacade', () => {
       getHostsPath: vi.fn().mockReturnValue('/etc/hosts'),
       isProfileApplied: vi.fn().mockReturnValue(true),
       isValidProfileName: vi.fn((name: string) => /^[a-zA-Z0-9_-]+$/.test(name)),
+      getBackups: vi.fn().mockReturnValue([]),
+      restoreBackup: vi.fn(),
     };
 
     _mockLogger = {
@@ -377,6 +381,85 @@ describe('HostSwitchFacade', () => {
 
       expect(result).toHaveLength(2);
       expect(result.map((p) => p.name)).toEqual(['staging', 'production']);
+    });
+  });
+
+  describe('listBackups', () => {
+    it('サービスの一覧を data に載せて返す', async () => {
+      const backups = [{ id: 'a', path: '/b/a', createdAt: null }];
+      mockService.getBackups.mockReturnValue(backups);
+
+      const result = await facade.listBackups();
+
+      expect(result.success).toBe(true);
+      expect((result.data as { backups: unknown }).backups).toEqual(backups);
+    });
+  });
+
+  describe('restoreBackup', () => {
+    it('バックアップが無ければ失敗を返す', async () => {
+      mockService.getBackups.mockReturnValue([]);
+
+      const result = await facade.restoreBackup();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('No backups');
+    });
+
+    it('存在しない id を弾く', async () => {
+      mockService.getBackups.mockReturnValue([{ id: 'a', path: '/b/a', createdAt: null }]);
+
+      const result = await facade.restoreBackup('zzz');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not found');
+    });
+
+    it('sudo が必要なら sudoArgs を返す（id あり）', async () => {
+      mockService.getBackups.mockReturnValue([{ id: 'a', path: '/b/a', createdAt: null }]);
+      vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(true);
+
+      const result = await facade.restoreBackup('a');
+
+      expect(result.requiresSudo).toBe(true);
+      expect(result.sudoArgs).toEqual(['restore', 'a']);
+    });
+
+    it('sudo が必要なら sudoArgs を返す（id 省略）', async () => {
+      mockService.getBackups.mockReturnValue([{ id: 'a', path: '/b/a', createdAt: null }]);
+      vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(true);
+
+      const result = await facade.restoreBackup();
+
+      expect(result.sudoArgs).toEqual(['restore']);
+    });
+
+    it('sudo 不要ならサービスに委譲する', async () => {
+      mockService.getBackups.mockReturnValue([{ id: 'a', path: '/b/a', createdAt: null }]);
+      vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(false);
+      mockService.restoreBackup.mockReturnValue({
+        success: true,
+        message: "Restored hosts from backup 'a'.",
+        backupPath: '/b/prev',
+      });
+
+      const result = await facade.restoreBackup('a');
+
+      expect(mockService.restoreBackup).toHaveBeenCalledWith('a');
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('previous hosts backed up');
+    });
+
+    it('事前チェックを通ってもサービスが requiresSudo を返したら sudoArgs を付ける', async () => {
+      // accessSync が書けると誤判定し、実際の rename が EACCES になるケース
+      mockService.getBackups.mockReturnValue([{ id: 'a', path: '/b/a', createdAt: null }]);
+      vi.mocked(mockPermissionChecker.requiresSudo).mockReturnValue(false);
+      mockService.restoreBackup.mockReturnValue({ success: false, requiresSudo: true });
+
+      const result = await facade.restoreBackup('a');
+
+      expect(result.requiresSudo).toBe(true);
+      expect(result.sudoArgs).toEqual(['restore', 'a']);
     });
   });
 });

@@ -21,6 +21,17 @@ export class CurrentProfileManager {
     });
   }
 
+  /**
+   * 現在のプロファイル記録を消す。バックアップから復元した hosts は
+   * 特定のプロファイルと一致するとは限らないので、復元後はどのプロファイルも
+   * アクティブでない状態にする。
+   */
+  clearCurrentProfile(): void {
+    if (this.fileSystem.existsSync(this.config.currentProfileFile)) {
+      this.fileSystem.unlinkSync(this.config.currentProfileFile);
+    }
+  }
+
   isHostsModified(): boolean {
     const currentData = this.getCurrentProfileData();
     if (!currentData || !currentData.checksum) {

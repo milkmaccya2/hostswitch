@@ -4,7 +4,9 @@ import type { HostSwitchFacade } from '../../HostSwitchFacade';
 import { CreateProfileCommand } from '../CreateProfileCommand';
 import { DeleteProfileCommand } from '../DeleteProfileCommand';
 import { EditProfileCommand } from '../EditProfileCommand';
+import { ListBackupsCommand } from '../ListBackupsCommand';
 import { ListProfilesCommand } from '../ListProfilesCommand';
+import { RestoreBackupCommand } from '../RestoreBackupCommand';
 import { ShowProfileCommand } from '../ShowProfileCommand';
 import { SwitchProfileCommand } from '../SwitchProfileCommand';
 
@@ -20,6 +22,8 @@ describe('Command Classes', () => {
       showProfile: vi.fn(),
       deleteProfile: vi.fn(),
       elevate: vi.fn(),
+      listBackups: vi.fn(),
+      restoreBackup: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
     };
@@ -115,6 +119,41 @@ describe('Command Classes', () => {
 
       expect(result).toBe(expectedResult);
       expect(mockFacade.deleteProfile).toHaveBeenCalledWith('old-profile', false);
+    });
+  });
+
+  describe('ListBackupsCommand', () => {
+    it('facade.listBackups を呼ぶ', async () => {
+      const expected: ICommandResult = { success: true, data: { backups: [] } };
+      vi.mocked(mockFacade.listBackups!).mockResolvedValue(expected);
+
+      const command = new ListBackupsCommand(mockFacade as HostSwitchFacade);
+      const result = await command.execute();
+
+      expect(mockFacade.listBackups).toHaveBeenCalled();
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('RestoreBackupCommand', () => {
+    it('id を facade.restoreBackup に渡す', async () => {
+      const expected: ICommandResult = { success: true, message: 'Restored' };
+      vi.mocked(mockFacade.restoreBackup!).mockResolvedValue(expected);
+
+      const command = new RestoreBackupCommand(mockFacade as HostSwitchFacade, 'abc');
+      const result = await command.execute();
+
+      expect(mockFacade.restoreBackup).toHaveBeenCalledWith('abc');
+      expect(result).toBe(expected);
+    });
+
+    it('id 省略時は undefined を渡す', async () => {
+      vi.mocked(mockFacade.restoreBackup!).mockResolvedValue({ success: true });
+
+      const command = new RestoreBackupCommand(mockFacade as HostSwitchFacade);
+      await command.execute();
+
+      expect(mockFacade.restoreBackup).toHaveBeenCalledWith(undefined);
     });
   });
 });

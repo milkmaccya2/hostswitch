@@ -319,6 +319,18 @@ MIT License - See [LICENSE](LICENSE) file for details.
 
 [milkmaccya2](https://github.com/milkmaccya2)
 
+## Backups
+
+Every switch backs up your current hosts file under `~/.hostswitch/backups/`. List and restore them:
+
+```bash
+hostswitch backups          # list available backups, newest first
+hostswitch restore          # restore the most recent backup (requires sudo)
+hostswitch restore <id>     # restore a specific backup
+```
+
+The most recent 20 backups are kept; older ones are pruned automatically. Restoring clears the active profile, since a restored hosts file may not match any profile.
+
 ## Contributing
 
 Bug reports and feature requests are welcome at [GitHub Issues](https://github.com/milkmaccya2/hostswitch/issues).

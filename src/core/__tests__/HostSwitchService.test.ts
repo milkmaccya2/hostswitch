@@ -327,4 +327,105 @@ describe('HostSwitchService - 統合テスト', () => {
       expect(mocks.mockPermissionChecker.calls).toHaveLength(0);
     });
   });
+
+  describe('バックアップの復元', () => {
+    const seedBackups = () => {
+      mocks.mockFileSystem.setFile(
+        `${mocks.config.backupDir}/hosts_2026-08-05T14-32-10-123Z`,
+        '127.0.0.1 old'
+      );
+      mocks.mockFileSystem.setFile(
+        `${mocks.config.backupDir}/hosts_2026-08-07T09-15-00-000Z`,
+        '127.0.0.1 newer'
+      );
+    };
+
+    it('id 省略時は最新のバックアップを hosts に復元する', () => {
+      seedBackups();
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, '127.0.0.1 current');
+
+      const result = service.restoreBackup();
+
+      expect(result.success).toBe(true);
+      expect(mocks.mockFileSystem.getFile(mocks.config.hostsPath)).toBe('127.0.0.1 newer');
+    });
+
+    it('id 指定でそのバックアップを復元する', () => {
+      seedBackups();
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, '127.0.0.1 current');
+
+      const result = service.restoreBackup('2026-08-05T14-32-10-123Z');
+
+      expect(result.success).toBe(true);
+      expect(mocks.mockFileSystem.getFile(mocks.config.hostsPath)).toBe('127.0.0.1 old');
+    });
+
+    it('復元後は current プロファイルを解除する', () => {
+      seedBackups();
+      service.createProfile('dev');
+      // createProfile 直後に current を設定しておく
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, '127.0.0.1 current');
+      mocks.mockFileSystem.writeJsonSync(mocks.config.currentProfileFile, {
+        profile: 'dev',
+        checksum: 'x',
+        updatedAt: 'now',
+      });
+
+      service.restoreBackup();
+
+      expect(service.getCurrentProfile()).toBeNull();
+    });
+
+    it('復元前の hosts も退避する', () => {
+      seedBackups();
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, '127.0.0.1 current');
+
+      const result = service.restoreBackup();
+
+      expect(result.backupPath).toBeDefined();
+      expect(mocks.mockFileSystem.getFile(result.backupPath as string)).toBe('127.0.0.1 current');
+    });
+
+    it('バックアップが無ければ失敗を返す', () => {
+      const result = service.restoreBackup();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('No backups');
+    });
+
+    it('存在しない id は失敗を返す', () => {
+      seedBackups();
+
+      const result = service.restoreBackup('nope');
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not found');
+    });
+
+    it('EACCES なら requiresSudo を返す', () => {
+      seedBackups();
+      mocks.mockFileSystem.setFile(mocks.config.hostsPath, '127.0.0.1 current');
+      mocks.mockFileSystem.renameSync = () => {
+        const error = new Error('Permission denied') as NodeJS.ErrnoException;
+        error.code = 'EACCES';
+        throw error;
+      };
+
+      const result = service.restoreBackup();
+
+      expect(result.success).toBe(false);
+      expect(result.requiresSudo).toBe(true);
+    });
+  });
+
+  describe('getBackups()', () => {
+    it('BackupManager の一覧をそのまま返す', () => {
+      mocks.mockFileSystem.setFile(`${mocks.config.backupDir}/hosts_2026-08-05T14-32-10-123Z`, 'x');
+
+      const backups = service.getBackups();
+
+      expect(backups).toHaveLength(1);
+      expect(backups[0].id).toBe('2026-08-05T14-32-10-123Z');
+    });
+  });
 });

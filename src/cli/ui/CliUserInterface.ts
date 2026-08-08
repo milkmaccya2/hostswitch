@@ -1,4 +1,5 @@
 import type {
+  BackupInfo,
   Choice,
   Elevate,
   ICommandResult,
@@ -136,6 +137,18 @@ export class CliUserInterface implements IUserInterface {
         profilesData.profiles.forEach((profile) => {
           const status = profile.isCurrent ? ' (current)' : '';
           this.logger.info(`  ${profile.name}${status}`);
+        });
+      }
+    } else if (data && typeof data === 'object' && 'backups' in data) {
+      // Backup list command
+      const backupsData = data as { backups: BackupInfo[] };
+      if (backupsData.backups.length === 0) {
+        this.showMessage('No backups found', 'info');
+      } else {
+        this.showMessage('Available backups (newest first):', 'info');
+        backupsData.backups.forEach((backup) => {
+          const when = backup.createdAt ? backup.createdAt.toLocaleString() : 'unknown time';
+          this.logger.info(`  ${backup.id}  (${when})`);
         });
       }
     } else if (data && typeof data === 'object' && 'content' in data) {

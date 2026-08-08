@@ -2,18 +2,29 @@ import type { ICommand, IUserInterface } from '../interfaces';
 import { CreateProfileCommand } from './commands/CreateProfileCommand';
 import { DeleteProfileCommand } from './commands/DeleteProfileCommand';
 import { EditProfileCommand } from './commands/EditProfileCommand';
+import { ListBackupsCommand } from './commands/ListBackupsCommand';
 import { ListProfilesCommand } from './commands/ListProfilesCommand';
+import { RestoreBackupCommand } from './commands/RestoreBackupCommand';
 import { ShowProfileCommand } from './commands/ShowProfileCommand';
 import { SwitchProfileCommand } from './commands/SwitchProfileCommand';
 import type { HostSwitchFacade } from './HostSwitchFacade';
 
-export type CommandType = 'list' | 'create' | 'switch' | 'edit' | 'show' | 'delete';
+export type CommandType =
+  | 'list'
+  | 'create'
+  | 'switch'
+  | 'edit'
+  | 'show'
+  | 'delete'
+  | 'backup-list'
+  | 'restore';
 
 export interface CommandParams {
   name?: string;
   fromCurrent?: boolean;
   force?: boolean;
   flushDns?: boolean;
+  backupId?: string;
 }
 
 export class CliController {
@@ -39,6 +50,12 @@ export class CliController {
     switch (type) {
       case 'list':
         return new ListProfilesCommand(this.facade);
+
+      case 'backup-list':
+        return new ListBackupsCommand(this.facade);
+
+      case 'restore':
+        return new RestoreBackupCommand(this.facade, params.backupId);
 
       case 'create':
         if (!params.name) {
