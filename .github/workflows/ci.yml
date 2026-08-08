@@ -7,9 +7,16 @@ on:
   pull_request:
 
 jobs:
-  check:
-    name: Lint, Build & Test
-    runs-on: ubuntu-latest
+  test:
+    name: Test (Node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # engines は Node >=20 を宣言しているので、その下限から現行までを回す。
+        # 主要ユーザー層の macOS も含める（Windows は #78 の postbuild 対応後に追加）
+        os: [ubuntu-latest, macos-latest]
+        node: [20, 22, 24]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: ${{ matrix.node }}
           cache: npm
 
       - name: Install dependencies
@@ -32,5 +39,43 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm run test:run
+      - name: Test with coverage
+        run: npm run test:coverage
+
+  audit:
+    name: Audit (production dependencies)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # hostswitch は sudo で動くので、本番依存の high 以上は落とす。
+      # dev 依存の脆弱性は Renovate と手動更新で追うため、ここでは対象外
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  # ブランチ保護の必須チェック名 "Lint, Build & Test" を維持するための集約ゲート。
+  # matrix を必須チェックに直接指定すると組み合わせが増えるたびに保護設定を
+  # 更新する必要があるため、単一のゲートで受ける
+  check:
+    name: Lint, Build & Test
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: Verify test matrix succeeded
+        run: |
+          if [ "${{ needs.test.result }}" != "success" ]; then
+            echo "Test matrix did not succeed: ${{ needs.test.result }}"
+            exit 1
+          fi
+          echo "All matrix jobs passed."
