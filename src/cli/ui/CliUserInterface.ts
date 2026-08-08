@@ -7,6 +7,7 @@ import type {
   IUserInterface,
   MessageType,
   ProfileInfo,
+  StatusInfo,
 } from '../../interfaces';
 
 export class CliUserInterface implements IUserInterface {
@@ -151,10 +152,44 @@ export class CliUserInterface implements IUserInterface {
           this.logger.info(`  ${backup.id}  (${when})`);
         });
       }
+    } else if (data && typeof data === 'object' && 'status' in data) {
+      this.displayStatus((data as { status: StatusInfo }).status);
     } else if (data && typeof data === 'object' && 'content' in data) {
       // Show profile command
       const contentData = data as { content: string };
       console.log(contentData.content);
+    }
+  }
+
+  private displayStatus(status: StatusInfo): void {
+    const profile = status.currentProfile ?? '(none)';
+    let state: string;
+    if (!status.currentProfile) {
+      state = 'no profile active';
+    } else if (status.modified) {
+      state = 'modified outside hostswitch';
+    } else {
+      state = 'in sync';
+    }
+
+    this.logger.info(`Current profile: ${profile}`);
+    this.logger.info(`Hosts file:      ${status.hostsPath}`);
+    this.logger.info(`Status:          ${state}`);
+    if (status.updatedAt) {
+      this.logger.info(`Last switched:   ${new Date(status.updatedAt).toLocaleString()}`);
+    }
+    if (status.latestBackup) {
+      const when = status.latestBackup.createdAt
+        ? status.latestBackup.createdAt.toLocaleString()
+        : 'unknown time';
+      this.logger.info(`Latest backup:   ${status.latestBackup.id} (${when})`);
+    }
+    if (status.modified) {
+      this.showMessage(
+        'Tip: run `hostswitch create <name> --from-current` to save the current hosts, ' +
+          'or `hostswitch switch <name>` to overwrite it.',
+        'warning'
+      );
     }
   }
 }

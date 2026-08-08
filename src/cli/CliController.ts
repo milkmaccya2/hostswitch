@@ -6,6 +6,7 @@ import { ListBackupsCommand } from './commands/ListBackupsCommand';
 import { ListProfilesCommand } from './commands/ListProfilesCommand';
 import { RestoreBackupCommand } from './commands/RestoreBackupCommand';
 import { ShowProfileCommand } from './commands/ShowProfileCommand';
+import { StatusCommand } from './commands/StatusCommand';
 import { SwitchProfileCommand } from './commands/SwitchProfileCommand';
 import type { HostSwitchFacade } from './HostSwitchFacade';
 
@@ -17,7 +18,8 @@ export type CommandType =
   | 'show'
   | 'delete'
   | 'backup-list'
-  | 'restore';
+  | 'restore'
+  | 'status';
 
 export interface CommandParams {
   name?: string;
@@ -50,6 +52,9 @@ export class CliController {
     switch (type) {
       case 'list':
         return new ListProfilesCommand(this.facade);
+
+      case 'status':
+        return new StatusCommand(this.facade);
 
       case 'backup-list':
         return new ListBackupsCommand(this.facade);

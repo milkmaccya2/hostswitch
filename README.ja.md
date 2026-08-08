@@ -341,6 +341,14 @@ MIT License - 詳細は[LICENSE](LICENSE)ファイルを参照してください
 
 [milkmaccya2](https://github.com/milkmaccya2)
 
+## 状態確認
+
+```bash
+hostswitch status
+```
+
+現在のプロファイル、`/etc/hosts` がそれと一致しているか（`in sync` か `modified outside hostswitch`）、最後に切り替えた日時、直近のバックアップを表示します。
+
 ## バックアップ
 
 切り替えのたびに現在の hosts ファイルが `~/.hostswitch/backups/` に退避されます。一覧・復元:

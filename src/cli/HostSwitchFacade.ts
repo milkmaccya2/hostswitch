@@ -57,6 +57,18 @@ export class HostSwitchFacade {
     }
   }
 
+  async getStatus(): Promise<ICommandResult> {
+    try {
+      const status = this.hostSwitchService.getStatus();
+      return { success: true, data: { status } };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to get status: ${error instanceof Error ? error.message : String(error)}`,
+      };
+    }
+  }
+
   async listBackups(): Promise<ICommandResult> {
     try {
       const backups = this.hostSwitchService.getBackups();

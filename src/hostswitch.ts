@@ -125,6 +125,16 @@ function parseCommands() {
       });
     });
 
+  // Status command
+  program
+    .command('status')
+    .description('Show the current profile and whether hosts drifted from it')
+    .action(async () => {
+      const ui = new CliUserInterface(logger, elevate);
+      const controller = new CliController(facade, ui);
+      await controller.executeCommand('status');
+    });
+
   // Backup list command
   program
     .command('backups')
