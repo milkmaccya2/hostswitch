@@ -29,10 +29,10 @@ export default defineConfig({
       // 現状値（lines/statements 83%, branches 84%, functions 91%）から
       // 少し下に置く。ここを割ったら CI が落ちる
       thresholds: {
-        lines: 80,
-        statements: 80,
-        branches: 78,
-        functions: 85,
+        lines: 85,
+        statements: 85,
+        branches: 82,
+        functions: 90,
       },
     },
   },
