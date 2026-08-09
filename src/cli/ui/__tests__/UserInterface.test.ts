@@ -22,6 +22,7 @@ describe('User Interface Classes', () => {
       elevate: vi.fn(),
       getCurrentProfile: vi.fn(),
       getDeletableProfiles: vi.fn(),
+      validateProfileNameInput: vi.fn().mockReturnValue(true),
     } as unknown as HostSwitchFacade;
 
     mockLogger = {
@@ -151,6 +152,135 @@ describe('User Interface Classes', () => {
         expect(mockLogger.warning).toHaveBeenCalledWith(
           'Run `hostswitch switch nothing` to apply to /etc/hosts.'
         );
+      });
+    });
+
+    describe('displayData', () => {
+      it('プロファイル一覧を current 付きで表示する', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: {
+            profiles: [
+              { name: 'dev', isCurrent: true },
+              { name: 'stg', isCurrent: false },
+            ],
+          },
+        });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('  dev (current)');
+        expect(mockLogger.info).toHaveBeenCalledWith('  stg');
+      });
+
+      it('プロファイルが空なら No profiles found', async () => {
+        await cliUI.handleCommandResult({ success: true, data: { profiles: [] } });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('No profiles found');
+      });
+
+      it('バックアップ一覧を日時付きで表示する', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: {
+            backups: [{ id: '2026-08-05T14-32-10-123Z', path: '/b', createdAt: new Date(0) }],
+          },
+        });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('Available backups (newest first):');
+        const printed = vi
+          .mocked(mockLogger.info)
+          .mock.calls.map((c) => c[0])
+          .join('\n');
+        expect(printed).toContain('2026-08-05T14-32-10-123Z');
+      });
+
+      it('createdAt が null のバックアップは unknown time と表示する', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: { backups: [{ id: 'manual', path: '/b', createdAt: null }] },
+        });
+
+        const printed = vi
+          .mocked(mockLogger.info)
+          .mock.calls.map((c) => c[0])
+          .join('\n');
+        expect(printed).toContain('unknown time');
+      });
+
+      it('バックアップが空なら No backups found', async () => {
+        await cliUI.handleCommandResult({ success: true, data: { backups: [] } });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('No backups found');
+      });
+
+      it('プロファイル内容をそのまま出力する', async () => {
+        const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+        await cliUI.handleCommandResult({
+          success: true,
+          data: { content: '127.0.0.1 example.local' },
+        });
+
+        expect(spy).toHaveBeenCalledWith('127.0.0.1 example.local');
+        spy.mockRestore();
+      });
+    });
+
+    describe('displayStatus', () => {
+      const baseStatus = {
+        currentProfile: 'dev',
+        hostsPath: '/etc/hosts',
+        modified: false,
+        updatedAt: null as string | null,
+        latestBackup: null as { id: string; path: string; createdAt: Date | null } | null,
+      };
+
+      it('in sync の状態を表示する', async () => {
+        await cliUI.handleCommandResult({ success: true, data: { status: baseStatus } });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('Current profile: dev');
+        expect(mockLogger.info).toHaveBeenCalledWith('Status:          in sync');
+      });
+
+      it('current が無ければ no profile active', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: { status: { ...baseStatus, currentProfile: null } },
+        });
+
+        expect(mockLogger.info).toHaveBeenCalledWith('Current profile: (none)');
+        expect(mockLogger.info).toHaveBeenCalledWith('Status:          no profile active');
+      });
+
+      it('modified なら警告とTipを出す', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: { status: { ...baseStatus, modified: true } },
+        });
+
+        expect(mockLogger.info).toHaveBeenCalledWith(
+          'Status:          modified outside hostswitch'
+        );
+        expect(mockLogger.warning).toHaveBeenCalledWith(expect.stringContaining('--from-current'));
+      });
+
+      it('updatedAt と latestBackup があれば表示する', async () => {
+        await cliUI.handleCommandResult({
+          success: true,
+          data: {
+            status: {
+              ...baseStatus,
+              updatedAt: '2026-08-05T14:32:10.000Z',
+              latestBackup: { id: 'bk1', path: '/b', createdAt: new Date(0) },
+            },
+          },
+        });
+
+        const printed = vi
+          .mocked(mockLogger.info)
+          .mock.calls.map((c) => c[0])
+          .join('\n');
+        expect(printed).toContain('Last switched:');
+        expect(printed).toContain('Latest backup:   bk1');
       });
     });
   });
@@ -520,6 +650,84 @@ describe('User Interface Classes', () => {
 
         await interactiveUI.run();
 
+        expect(mockFacade.deleteProfile).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('run() - show', () => {
+      it('選んだプロファイルの内容を表示する', async () => {
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: { profiles: [{ name: 'dev', isCurrent: false }] },
+        });
+        vi.mocked(mockFacade.showProfile).mockResolvedValue({
+          success: true,
+          data: { content: '127.0.0.1 dev.local' },
+        });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'show' })
+          .mockResolvedValueOnce({ selected: 'dev' })
+          // show の後の「Press Enter to continue」
+          .mockResolvedValueOnce({ input: '' });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.showProfile).toHaveBeenCalledWith('dev');
+        expect(mockLogger.info).toHaveBeenCalledWith('127.0.0.1 dev.local');
+      });
+
+      it('プロファイルが無ければ警告して何もしない', async () => {
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: { profiles: [] },
+        });
+        vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selected: 'show' });
+
+        await interactiveUI.run();
+
+        expect(mockLogger.warning).toHaveBeenCalledWith('No profiles available to show');
+        expect(mockFacade.showProfile).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('run() - create', () => {
+      it('名前を入力し from-current を確認して作成する', async () => {
+        vi.mocked(mockFacade.validateProfileNameInput).mockReturnValue(true);
+        vi.mocked(mockFacade.createProfile).mockResolvedValue({ success: true });
+        vi.mocked(inquirer.prompt)
+          .mockResolvedValueOnce({ selected: 'create' })
+          .mockResolvedValueOnce({ input: 'newone' })
+          .mockResolvedValueOnce({ confirmed: true });
+
+        await interactiveUI.run();
+
+        expect(mockFacade.createProfile).toHaveBeenCalledWith('newone', true);
+      });
+    });
+
+    describe('run() - edit の早期リターン', () => {
+      it('プロファイルが無ければ警告して何もしない', async () => {
+        vi.mocked(mockFacade.listProfiles).mockResolvedValue({
+          success: true,
+          data: { profiles: [] },
+        });
+        vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selected: 'edit' });
+
+        await interactiveUI.run();
+
+        expect(mockLogger.warning).toHaveBeenCalledWith('No profiles available to edit');
+        expect(mockFacade.editProfile).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('run() - delete の早期リターン', () => {
+      it('削除可能なプロファイルが無ければ警告して何もしない', async () => {
+        vi.mocked(mockFacade.getDeletableProfiles).mockReturnValue([]);
+        vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selected: 'delete' });
+
+        await interactiveUI.run();
+
+        expect(mockLogger.warning).toHaveBeenCalledWith('No profiles available for deletion');
         expect(mockFacade.deleteProfile).not.toHaveBeenCalled();
       });
     });
