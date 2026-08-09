@@ -90,3 +90,25 @@ insurance while you're testing changes to the switching logic itself.
 - Make sure `npm run check` passes.
 - Update relevant documentation (README, docs site under `website/`, etc.)
   if behavior changes.
+
+## Releasing (maintainers)
+
+Releases publish to npm via `.github/workflows/publish.yml`, which runs
+when a **GitHub Release** is published. The published version comes from
+`package.json`, **not** from the tag name — so the tag and `package.json`
+must agree. Use `npm version` to keep them in sync rather than tagging by
+hand:
+
+```bash
+git checkout main && git pull --ff-only origin main
+npm version patch            # bumps package.json, commits "x.y.z", tags vx.y.z
+git push origin main --follow-tags
+gh release create vx.y.z --generate-notes   # this triggers the publish workflow
+```
+
+Tagging a commit that still has the previous `package.json` version (for
+example running `git tag` without `npm version`) publishes the old version
+and npm rejects it with `cannot publish over the previously published
+versions`. The publish workflow now fails fast with a clear message when
+the tag and `package.json` disagree, but the correct fix is always to bump
+the version with `npm version`.
