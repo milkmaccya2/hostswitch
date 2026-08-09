@@ -207,6 +207,10 @@ Running `hostswitch` without any arguments launches an interactive mode:
 1. **Hosts File Path**: Automatically detects OS
    - Unix/Linux/macOS: `/etc/hosts`
    - Windows: `C:\Windows\System32\drivers\etc\hosts`
+   - **Supported platforms are macOS and Linux** (including WSL). The Windows
+     path is detected, but native Windows is not officially supported — the
+     `postbuild` `chmod` breaks the source build there (see #78). Don't invest
+     in native-Windows behavior without revisiting that decision.
 2. **Editor Selection**: Uses `$EDITOR` environment variable, falls back to `vi`
 3. **Profile Validation**: Cannot delete currently active profile
 4. **Backup Strategy**: Only backs up if hosts file was modified or no current profile exists. The most recent 20 backups are kept; older ones are pruned on each switch/restore. Restore replays a backup through the same atomic write path as switch and clears the current profile afterwards

@@ -31,7 +31,7 @@ HostSwitchは、開発環境やテスト環境で異なるhosts設定を簡単�
 ## 要件
 
 - Node.js 20.0.0以上
-- macOS / Linux / Windows (WSL推奨)
+- **対応プラットフォーム: macOS / Linux**（WSL 経由の Windows も含む。WSL は Linux として動作します）。ネイティブ Windows は正式サポート対象外です — 下の [Windows](#windows) を参照
 - sudo権限（hostsファイル切り替え時）
 
 ## インストール
@@ -321,11 +321,11 @@ hostswitch delete 破損プロファイル --force
 hostswitch create 破損プロファイル --from-current
 ```
 
-### Windowsでの使用
+### Windows
 
-WindowsではWSL (Windows Subsystem for Linux)の使用を推奨します。ネイティブWindowsで使用する場合は、管理者権限でコマンドプロンプトを実行してください。
+**ネイティブ Windows は正式サポート対象外です。** **WSL (Windows Subsystem for Linux)** の使用を推奨します（WSL は Linux として動作し、完全にサポートされます）。
 
-**注意**: ネイティブWindowsサポートが改善されました。Windowsのhostsファイルパス（`C:\Windows\System32\drivers\etc\hosts`）を自動的に検出します。
+コードは Windows の hosts パス（`C:\Windows\System32\drivers\etc\hosts`）を検出し、管理者権限で npm 版が動く場合もありますが、テスト・サポート対象外です。ソースからのビルドは現在ネイティブ Windows では失敗します（`postbuild` の `chmod` のため）。ネイティブ Windows を正式対応にする作業に協力いただける場合は [#78](https://github.com/milkmaccya2/hostswitch/issues/78) を参照してください。
 
 ## データ保存場所
 
