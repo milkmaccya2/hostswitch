@@ -31,7 +31,7 @@ HostSwitch is a CLI tool that makes it easy to switch between different hosts co
 ## Requirements
 
 - Node.js 20.0.0 or higher
-- macOS / Linux / Windows (WSL recommended)
+- **Supported platforms: macOS and Linux** (including Windows via WSL, which runs as Linux). Native Windows is not officially supported — see [Windows](#windows) below.
 - sudo permissions (for hosts file switching)
 
 ## Installation
@@ -299,11 +299,11 @@ hostswitch delete corrupted-profile --force
 hostswitch create corrupted-profile --from-current
 ```
 
-### Windows Usage
+### Windows
 
-For Windows, we recommend using WSL (Windows Subsystem for Linux). If using native Windows, run Command Prompt as Administrator.
+**Native Windows is not officially supported.** Use **WSL (Windows Subsystem for Linux)**, which runs as Linux and is fully supported.
 
-**Note**: Native Windows support has been improved. The tool now automatically detects the Windows hosts file location (`C:\Windows\System32\drivers\etc\hosts`).
+The code does detect the Windows hosts path (`C:\Windows\System32\drivers\etc\hosts`), and installing from npm may work when run as Administrator, but this is not tested or supported. Building from source currently fails on native Windows (the `postbuild` step uses `chmod`). If you want to help make native Windows a first-class target, see [#78](https://github.com/milkmaccya2/hostswitch/issues/78).
 
 ## Data Storage
 
