@@ -112,3 +112,32 @@ and npm rejects it with `cannot publish over the previously published
 versions`. The publish workflow now fails fast with a clear message when
 the tag and `package.json` disagree, but the correct fix is always to bump
 the version with `npm version`.
+
+## Reviewing fork pull requests (maintainers)
+
+CI does not run automatically on a pull request from a first-time
+contributor's fork — GitHub holds the workflow with an `action_required`
+status until a maintainer approves it. This is deliberate: `publish.yml`
+runs with `id-token` and npm publish rights, and hostswitch itself runs
+under `sudo`, so letting unreviewed fork code trigger workflows is a risk
+we don't want to take. The approval gate stays on.
+
+When a fork PR comes in:
+
+1. **Read the diff first**, before approving CI. Pay attention to anything
+   touching `.github/workflows/`, `package.json`, `package-lock.json`, or
+   install scripts — those are the parts that could abuse the CI
+   environment. A docs- or source-only change is low risk.
+2. Approve the run once the diff looks safe:
+
+   ```bash
+   gh run list --branch <fork-branch> --json databaseId,conclusion \
+     --jq '.[] | select(.conclusion=="action_required") | .databaseId'
+   gh api -X POST repos/milkmaccya2/hostswitch/actions/runs/<id>/approve
+   ```
+
+   (or click **Approve and run** on the PR's Checks tab).
+3. Let the matrix finish, then review and merge as usual.
+
+The `main` branch requires the `Lint, Build & Test` check to pass, so a PR
+can't be merged until its CI has been approved and is green.
