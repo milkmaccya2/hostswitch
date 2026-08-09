@@ -60,7 +60,7 @@ export class CurrentProfileManager {
   private getHostsChecksum(): string | null {
     try {
       const content = this.fileSystem.readFileSync(this.config.hostsPath);
-      return crypto.createHash('md5').update(content).digest('hex');
+      return crypto.createHash('sha256').update(content).digest('hex');
     } catch (_err) {
       return null;
     }

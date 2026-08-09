@@ -442,7 +442,7 @@ describe('HostSwitchService - 統合テスト', () => {
       mocks.mockFileSystem.setFile(`${mocks.config.profilesDir}/dev.hosts`, 'content');
       mocks.mockFileSystem.setFile(mocks.config.hostsPath, 'content');
       // switch 相当: current.json を checksum つきで書く
-      const checksum = require('node:crypto').createHash('md5').update('content').digest('hex');
+      const checksum = require('node:crypto').createHash('sha256').update('content').digest('hex');
       mocks.mockFileSystem.writeJsonSync(mocks.config.currentProfileFile, {
         profile: 'dev',
         checksum,
